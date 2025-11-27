@@ -1,0 +1,131 @@
+.tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xl);
+    border-bottom: 2px solid var(--color-gray-300);
+}
+
+.tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    color: var(--color-gray-600);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.tab:hover {
+    color: var(--color-green);
+    background: var(--color-gray-50);
+}
+
+.tab.active {
+    color: var(--color-green);
+    border-bottom-color: var(--color-green);
+}
+
+.report-section {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.date-filter {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.date-filter input {
+    padding: 8px 12px;
+    border: 2px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+}
+
+.stats-summary {
+    margin-bottom: var(--spacing-xl);
+}
+
+.summary-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+}
+
+.summary-card h4 {
+    color: var(--color-gray-600);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.summary-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.text-green {
+    color: var(--color-green);
+}
+
+.text-blue {
+    color: var(--color-blue);
+}
+
+.text-warning {
+    color: var(--color-yellow-dark);
+}
+
+.text-success {
+    color: var(--color-green);
+}
+
+.modal-large {
+    max-width: 900px;
+}
+
+.add-item-section {
+    background: var(--color-gray-50);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin: var(--spacing-lg) 0;
+}
+
+.add-item-section h4 {
+    margin-bottom: var(--spacing-md);
+}
+
+.order-items-preview {
+    margin-top: var(--spacing-lg);
+}
+
+.order-items-preview h4 {
+    margin-bottom: var(--spacing-md);
+}
+
+.items-list {
+    padding-left: var(--spacing-lg);
+    margin: var(--spacing-sm) 0;
+}
+
+details {
+    cursor: pointer;
+}
+
+summary {
+    color: var(--color-blue);
+    font-weight: 600;
+}
