@@ -25,7 +25,7 @@ docker-compose up -d --build
 ```
 
 3. **Access the application:**
-- Frontend: `http://your-vm-ip`
+- Frontend: `http://your-vm-ip:1111`
 - Backend API: `http://your-vm-ip:3000`
 
 4. **Stop the application:**
@@ -117,7 +117,7 @@ Hey_Potu/
 ## 🔧 Configuration
 
 ### Ports
-- Frontend: Port 80 (HTTP)
+- Frontend: Port 1111 (HTTP)
 - Backend: Port 3000 (API)
 
 ### Database

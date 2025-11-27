@@ -14,7 +14,7 @@ docker-compose up -d --build
 ```
 
 ### 3. Access the Application
-- **Frontend**: `http://your-vm-ip`
+- **Frontend**: `http://your-vm-ip:1111`
 - **Backend API**: `http://your-vm-ip:3000`
 
 ### 4. Stop the Application
@@ -25,7 +25,7 @@ docker-compose down
 ## Configuration
 
 ### Ports Used
-- **Frontend**: Port 80
+- **Frontend**: Port 1111
 - **Backend**: Port 3000
 
 ### Database
@@ -44,18 +44,19 @@ docker-compose down
 
 ## Notes
 
-- The application uses **port 80** for the frontend (standard HTTP)
+- The application uses **port 1111** for the frontend
 - The backend runs on **port 3000**
-- All API calls are proxied through nginx, so you only need to expose port 80
+- All API calls are proxied through nginx, so you only need to expose port 1111
 - Database persists between restarts
+- SQLite is automatically installed inside the Docker container (no need to install on VM)
 
 ## Troubleshooting
 
-**Port 80 already in use?**
+**Port 1111 already in use?**
 Edit `docker-compose.yml` and change:
 ```yaml
 ports:
-  - "8080:80"  # Change 80 to any available port
+  - "8080:80"  # Change 1111 to any available port (format: external:internal)
 ```
 
 **Port 3000 already in use?**

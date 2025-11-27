@@ -24,7 +24,7 @@ services:
         - VITE_API_URL=/api
     container_name: heypotu-frontend
     ports:
-      - "80:80"
+      - "1111:80"
     depends_on:
       - backend
     networks:
