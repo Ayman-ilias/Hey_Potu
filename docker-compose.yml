@@ -7,9 +7,9 @@ services:
     container_name: heypotu-backend
     environment:
       - NODE_ENV=production
-      - PORT=5001
+      - PORT=3000
     ports:
-      - "5001:5001"
+      - "3000:3000"
     networks:
       - heypotu-network
     restart: unless-stopped

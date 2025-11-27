@@ -26,7 +26,7 @@ docker-compose up -d --build
 
 3. **Access the application:**
 - Frontend: `http://your-vm-ip`
-- Backend API: `http://your-vm-ip:5001`
+- Backend API: `http://your-vm-ip:3000`
 
 4. **Stop the application:**
 ```bash
@@ -118,7 +118,7 @@ Hey_Potu/
 
 ### Ports
 - Frontend: Port 80 (HTTP)
-- Backend: Port 5001 (API)
+- Backend: Port 3000 (API)
 
 ### Database
 - SQLite database is automatically created in `backend/database.sqlite`

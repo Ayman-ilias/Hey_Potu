@@ -1,0 +1,86 @@
+# VM Deployment Guide
+
+## Quick Deployment on Your VM
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Ayman-ilias/Hey_Potu.git
+cd Hey_Potu
+```
+
+### 2. Start the Application
+```bash
+docker-compose up -d --build
+```
+
+### 3. Access the Application
+- **Frontend**: `http://your-vm-ip`
+- **Backend API**: `http://your-vm-ip:3000`
+
+### 4. Stop the Application
+```bash
+docker-compose down
+```
+
+## Configuration
+
+### Ports Used
+- **Frontend**: Port 80
+- **Backend**: Port 3000
+
+### Database
+- SQLite database file: `backend/database.sqlite`
+- Automatically created on first run
+- Data persists via Docker volumes
+
+## What's Included
+
+✅ Complete inventory management system
+✅ Product, Order, and Customer management
+✅ Dashboard with analytics
+✅ Reports and exports (PDF/Excel)
+✅ Production-ready Docker setup
+✅ No ngrok or external dependencies needed
+
+## Notes
+
+- The application uses **port 80** for the frontend (standard HTTP)
+- The backend runs on **port 3000**
+- All API calls are proxied through nginx, so you only need to expose port 80
+- Database persists between restarts
+
+## Troubleshooting
+
+**Port 80 already in use?**
+Edit `docker-compose.yml` and change:
+```yaml
+ports:
+  - "8080:80"  # Change 80 to any available port
+```
+
+**Port 3000 already in use?**
+Edit `docker-compose.yml` and `frontend/nginx.conf`:
+- In docker-compose.yml: Change all `3000` to your preferred port
+- In nginx.conf: Update `proxy_pass http://backend:YOUR_PORT;`
+
+## Monitoring
+
+**View logs:**
+```bash
+docker-compose logs -f
+```
+
+**View specific container logs:**
+```bash
+docker logs heypotu-frontend
+docker logs heypotu-backend
+```
+
+**Restart containers:**
+```bash
+docker-compose restart
+```
+
+---
+
+**Repository**: https://github.com/Ayman-ilias/Hey_Potu.git
