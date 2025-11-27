@@ -3,21 +3,28 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all orders
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    const orders = await db.all(`
-            SELECT o.*, c.customer_name, c.phone as customer_phone
-            FROM orders o
-            LEFT JOIN customers c ON o.customer_id = c.id
-            ORDER BY o.order_date DESC
-        `);
+    const orders = db.getAll('orders');
+    const customers = db.getAll('customers');
+    const orderItems = db.getAll('order_items');
 
-    // Fetch items for each order (N+1 problem, but fine for SQLite scale)
-    for (let order of orders) {
-      order.items = await db.all('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
-    }
+    const ordersWithDetails = orders.map(o => {
+      const customer = customers.find(c => c.id === o.customer_id);
+      const items = orderItems.filter(oi => oi.order_id === o.id);
 
-    res.json(orders);
+      return {
+        ...o,
+        customer_name: customer ? customer.customer_name : null,
+        customer_phone: customer ? customer.phone : null,
+        items
+      };
+    });
+
+    // Sort by order_date DESC
+    ordersWithDetails.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
+
+    res.json(ordersWithDetails);
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
@@ -25,22 +32,28 @@ router.get('/', async (req, res) => {
 });
 
 // Get single order
-router.get('/:id', async (req, res) => {
+router.get('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const order = await db.get(`
-            SELECT o.*, c.customer_name, c.phone as customer_phone, c.email as customer_email, c.address as customer_address
-            FROM orders o
-            LEFT JOIN customers c ON o.customer_id = c.id
-            WHERE o.id = ?
-        `, [id]);
+    const order = db.getById('orders', id);
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    order.items = await db.all('SELECT * FROM order_items WHERE order_id = ?', [id]);
-    res.json(order);
+    const customer = db.getById('customers', order.customer_id);
+    const items = db.query('order_items', oi => oi.order_id === parseInt(id));
+
+    const orderWithDetails = {
+      ...order,
+      customer_name: customer ? customer.customer_name : null,
+      customer_phone: customer ? customer.phone : null,
+      customer_email: customer ? customer.email : null,
+      customer_address: customer ? customer.address : null,
+      items
+    };
+
+    res.json(orderWithDetails);
   } catch (error) {
     console.error('Error fetching order:', error);
     res.status(500).json({ error: 'Failed to fetch order' });
@@ -48,7 +61,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new order
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
   try {
     const { customer_name, customer_phone, customer_email, customer_address, items, notes } = req.body;
 
@@ -58,23 +71,23 @@ router.post('/', async (req, res) => {
 
     // 1. Find or Create Customer
     let customerId;
-    const existingCustomer = await db.get('SELECT id FROM customers WHERE phone = ?', [customer_phone]);
+    const existingCustomer = db.query('customers', c => c.phone === customer_phone)[0];
 
     if (existingCustomer) {
       customerId = existingCustomer.id;
       // Update customer details if provided
-      await db.run(`
-                UPDATE customers 
-                SET customer_name = COALESCE(?, customer_name),
-                    email = COALESCE(?, email),
-                    address = COALESCE(?, address)
-                WHERE id = ?
-            `, [customer_name, customer_email, customer_address, customerId]);
+      db.update('customers', customerId, {
+        customer_name: customer_name || existingCustomer.customer_name,
+        email: customer_email || existingCustomer.email,
+        address: customer_address || existingCustomer.address
+      });
     } else {
-      const result = await db.run(`
-                INSERT INTO customers (customer_name, phone, email, address)
-                VALUES (?, ?, ?, ?)
-            `, [customer_name, customer_phone, customer_email, customer_address]);
+      const result = db.insert('customers', {
+        customer_name,
+        phone: customer_phone,
+        email: customer_email,
+        address: customer_address
+      });
       customerId = result.id;
     }
 
@@ -85,25 +98,33 @@ router.post('/', async (req, res) => {
     const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
 
     // 4. Insert order
-    const orderResult = await db.run(`
-            INSERT INTO orders (order_number, customer_id, customer_name, total_amount, notes)
-            VALUES (?, ?, ?, ?, ?)
-        `, [orderNumber, customerId, customer_name, totalAmount, notes]);
+    const orderResult = db.insert('orders', {
+      order_number: orderNumber,
+      customer_id: customerId,
+      customer_name,
+      total_amount: totalAmount,
+      notes
+    });
 
     const orderId = orderResult.id;
 
     // 5. Insert order items and update product stock
     for (const item of items) {
-      await db.run(`
-                INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, subtotal)
-                VALUES (?, ?, ?, ?, ?, ?)
-            `, [orderId, item.product_id, item.product_name, item.quantity, item.unit_price, item.subtotal]);
+      db.insert('order_items', {
+        order_id: orderId,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.subtotal
+      });
 
-      await db.run(`
-                UPDATE products 
-                SET sold_items = sold_items + ?
-                WHERE id = ?
-            `, [item.quantity, item.product_id]);
+      const product = db.getById('products', item.product_id);
+      if (product) {
+        db.update('products', item.product_id, {
+          sold_items: (product.sold_items || 0) + item.quantity
+        });
+      }
     }
 
     res.status(201).json({
@@ -118,22 +139,21 @@ router.post('/', async (req, res) => {
 });
 
 // Update order status
-router.put('/:id', async (req, res) => {
+router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
 
-    const result = await db.run(`
-            UPDATE orders 
-            SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `, [status, notes, id]);
+    const result = db.update('orders', id, {
+      status,
+      notes
+    });
 
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const updatedOrder = await db.get('SELECT * FROM orders WHERE id = ?', [id]);
+    const updatedOrder = db.getById('orders', id);
     res.json(updatedOrder);
   } catch (error) {
     console.error('Error updating order:', error);
@@ -142,25 +162,31 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete order
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (req, res) => {
   try {
     const { id } = req.params;
 
     // Get order items to restore stock
-    const items = await db.all('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [id]);
+    const items = db.query('order_items', oi => oi.order_id === parseInt(id));
 
     // Restore stock
     for (const item of items) {
-      await db.run(`
-                UPDATE products 
-                SET sold_items = sold_items - ?
-                WHERE id = ?
-            `, [item.quantity, item.product_id]);
+      const product = db.getById('products', item.product_id);
+      if (product) {
+        db.update('products', item.product_id, {
+          sold_items: (product.sold_items || 0) - item.quantity
+        });
+      }
     }
 
-    // Delete order (cascade should handle items, but we can delete manually to be safe)
-    await db.run('DELETE FROM order_items WHERE order_id = ?', [id]);
-    await db.run('DELETE FROM orders WHERE id = ?', [id]);
+    // Delete order items
+    const orderItems = db.query('order_items', oi => oi.order_id === parseInt(id));
+    for (const item of orderItems) {
+      db.deleteRow('order_items', item.id);
+    }
+
+    // Delete order
+    db.deleteRow('orders', id);
 
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {

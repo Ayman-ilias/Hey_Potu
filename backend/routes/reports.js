@@ -3,38 +3,67 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Dashboard Stats
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', (req, res) => {
   try {
+    const products = db.getAll('products');
+    const orders = db.getAll('orders');
+    const customers = db.getAll('customers');
+    const orderItems = db.getAll('order_items');
+
     // Total Products
-    const productsCount = await db.get('SELECT COUNT(*) as count FROM products');
+    const totalProducts = products.length;
+
     // Low Stock
-    const lowStockCount = await db.get('SELECT COUNT(*) as count FROM products WHERE (total_stock - sold_items) <= 10');
+    const lowStockCount = products.filter(p => {
+      const remaining = (p.total_stock || 0) - (p.sold_items || 0);
+      return remaining <= 10;
+    }).length;
+
     // Total Orders
-    const ordersCount = await db.get('SELECT COUNT(*) as count FROM orders');
+    const totalOrders = orders.length;
+
     // Total Customers
-    const customersCount = await db.get('SELECT COUNT(*) as count FROM customers');
+    const totalCustomers = customers.length;
+
     // Recent Orders
-    const recentOrders = await db.all(`
-            SELECT o.*, c.customer_name 
-            FROM orders o
-            LEFT JOIN customers c ON o.customer_id = c.id
-            ORDER BY o.created_at DESC 
-            LIMIT 5
-        `);
+    const recentOrders = orders
+      .map(o => {
+        const customer = customers.find(c => c.id === o.customer_id);
+        return {
+          ...o,
+          customer_name: customer ? customer.customer_name : null
+        };
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5);
+
     // Top Selling Products
-    const topProducts = await db.all(`
-            SELECT p.item_name, p.item_category, SUM(oi.quantity) as sold_items
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            GROUP BY p.id, p.item_name, p.item_category
-            ORDER BY sold_items DESC
-            LIMIT 5
-        `);
+    const productSales = {};
+    orderItems.forEach(oi => {
+      if (!productSales[oi.product_id]) {
+        productSales[oi.product_id] = 0;
+      }
+      productSales[oi.product_id] += oi.quantity;
+    });
+
+    const topProducts = Object.entries(productSales)
+      .map(([productId, quantity]) => {
+        const product = products.find(p => p.id === parseInt(productId));
+        return product ? {
+          item_name: product.item_name,
+          item_category: product.item_category,
+          sold_items: quantity
+        } : null;
+      })
+      .filter(p => p !== null)
+      .sort((a, b) => b.sold_items - a.sold_items)
+      .slice(0, 5);
+
     res.json({
-      totalProducts: productsCount.count,
-      lowStockCount: lowStockCount.count,
-      totalOrders: ordersCount.count,
-      totalCustomers: customersCount.count,
+      totalProducts,
+      lowStockCount,
+      totalOrders,
+      totalCustomers,
       recentOrders,
       topProducts
     });
@@ -45,15 +74,20 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // Inventory Report
-router.get('/inventory', async (req, res) => {
+router.get('/inventory', (req, res) => {
   try {
-    const inventory = await db.all(`
-            SELECT *, (total_stock - sold_items) as remaining_items,
-                   (total_stock * price) as total_value,
-                   (sold_items * price) as revenue
-            FROM products
-            ORDER BY item_name ASC
-        `);
+    const products = db.getAll('products');
+
+    const inventory = products.map(p => ({
+      ...p,
+      remaining_items: (p.total_stock || 0) - (p.sold_items || 0),
+      total_value: (p.total_stock || 0) * (p.price || 0),
+      revenue: (p.sold_items || 0) * (p.price || 0)
+    }));
+
+    // Sort by item_name ASC
+    inventory.sort((a, b) => a.item_name.localeCompare(b.item_name));
+
     res.json(inventory);
   } catch (error) {
     console.error('Error fetching inventory report:', error);
@@ -62,25 +96,40 @@ router.get('/inventory', async (req, res) => {
 });
 
 // Sales Report
-router.get('/sales', async (req, res) => {
+router.get('/sales', (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    let query = `
-            SELECT o.*, c.customer_name 
-            FROM orders o
-            LEFT JOIN customers c ON o.customer_id = c.id
-        `;
-    const params = [];
+    const orders = db.getAll('orders');
+    const customers = db.getAll('customers');
+
+    let filteredOrders = orders;
+
+    // Filter by date range if provided
     if (startDate && endDate) {
-      query += ` WHERE date(o.created_at) BETWEEN date(?) AND date(?)`;
-      params.push(startDate, endDate);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      filteredOrders = orders.filter(o => {
+        const orderDate = new Date(o.created_at);
+        return orderDate >= start && orderDate <= end;
+      });
     }
-    query += ` ORDER BY o.created_at DESC`;
-    const sales = await db.all(query, params);
+
+    // Add customer_name to orders
+    const sales = filteredOrders.map(o => {
+      const customer = customers.find(c => c.id === o.customer_id);
+      return {
+        ...o,
+        customer_name: customer ? customer.customer_name : null
+      };
+    });
+
+    // Sort by created_at DESC
+    sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // Calculate summary
     const totalOrders = sales.length;
-    const totalSales = sales.reduce((sum, order) => sum + order.total_amount, 0);
+    const totalSales = sales.reduce((sum, order) => sum + (order.total_amount || 0), 0);
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
     res.json({
@@ -98,18 +147,27 @@ router.get('/sales', async (req, res) => {
 });
 
 // Customer Report
-router.get('/customers', async (req, res) => {
+router.get('/customers', (req, res) => {
   try {
-    const customers = await db.all(`
-            SELECT c.*, 
-                   COUNT(o.id) as total_orders,
-                   COALESCE(SUM(o.total_amount), 0) as total_spent
-            FROM customers c
-            LEFT JOIN orders o ON c.id = o.customer_id
-            GROUP BY c.id
-            ORDER BY total_spent DESC
-        `);
-    res.json(customers);
+    const customers = db.getAll('customers');
+    const orders = db.getAll('orders');
+
+    const customerReport = customers.map(c => {
+      const customerOrders = orders.filter(o => o.customer_id === c.id);
+      const total_orders = customerOrders.length;
+      const total_spent = customerOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+      return {
+        ...c,
+        total_orders,
+        total_spent
+      };
+    });
+
+    // Sort by total_spent DESC
+    customerReport.sort((a, b) => b.total_spent - a.total_spent);
+
+    res.json(customerReport);
   } catch (error) {
     console.error('Error fetching customer report:', error);
     res.status(500).json({ error: 'Failed to fetch customer report' });

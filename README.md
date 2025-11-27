@@ -85,7 +85,7 @@ docker-compose down
 
 - **Frontend**: React 18 + Vite
 - **Backend**: Node.js + Express
-- **Database**: SQLite
+- **Database**: Excel (XLSX)
 - **Deployment**: Docker Compose
 - **Export**: jsPDF, xlsx
 
@@ -121,9 +121,9 @@ Hey_Potu/
 - Backend: Port 3000 (API)
 
 ### Database
-- SQLite database is automatically created on first run
-- Data persists in a Docker named volume (`heypotu-data`)
-- Database file location inside container: `/app/database.sqlite`
+- Excel database is automatically created on first run
+- Data stored in `backend/database.xlsx` with separate sheets for each table
+- Fast, simple, and no compilation required!
 
 ## 🌐 API Endpoints
 
@@ -175,8 +175,8 @@ docker-compose logs
 - Change ports in `docker-compose.yml` if 80 or 5001 are in use
 
 **Database issues:**
-- Reset database: `docker-compose down -v && docker-compose up -d --build`
-- The `-v` flag removes the volume with the database
+- Delete `backend/database.xlsx` and restart containers for fresh database
+- You can also download and edit the Excel file directly!
 
 **Frontend not loading:**
 - Clear browser cache

@@ -3,9 +3,13 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all categories
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
     try {
-        const categories = await db.all('SELECT * FROM categories ORDER BY name ASC');
+        const categories = db.getAll('categories');
+
+        // Sort by name ASC
+        categories.sort((a, b) => a.name.localeCompare(b.name));
+
         res.json(categories);
     } catch (error) {
         console.error('Error fetching categories:', error);
@@ -14,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create category
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
     try {
         const { name } = req.body;
 
@@ -22,46 +26,45 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Category name is required' });
         }
 
-        const result = await db.run('INSERT INTO categories (name) VALUES (?)', [name]);
-        const newCategory = await db.get('SELECT * FROM categories WHERE id = ?', [result.id]);
+        // Check if category already exists
+        const existing = db.query('categories', c => c.name === name);
+        if (existing.length > 0) {
+            return res.status(409).json({ error: 'Category already exists' });
+        }
+
+        const result = db.insert('categories', { name });
+        const newCategory = db.getById('categories', result.id);
 
         res.status(201).json(newCategory);
     } catch (error) {
         console.error('Error creating category:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
-            res.status(409).json({ error: 'Category already exists' });
-        } else {
-            res.status(500).json({ error: 'Failed to create category' });
-        }
+        res.status(500).json({ error: 'Failed to create category' });
     }
 });
 
 // Delete category
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (req, res) => {
     try {
         const { id } = req.params;
 
         // Check if category exists
-        const category = await db.get('SELECT * FROM categories WHERE id = ?', [id]);
+        const category = db.getById('categories', id);
         if (!category) {
             return res.status(404).json({ error: 'Category not found' });
         }
 
         // Check if category is in use
-        const productsUsingCategory = await db.get(
-            'SELECT COUNT(*) as count FROM products WHERE item_category = ?',
-            [category.name]
-        );
+        const productsUsingCategory = db.query('products', p => p.item_category === category.name);
 
-        if (productsUsingCategory.count > 0) {
+        if (productsUsingCategory.length > 0) {
             return res.status(409).json({
-                error: `Cannot delete category. ${productsUsingCategory.count} product(s) are using this category.`,
-                productsCount: productsUsingCategory.count
+                error: `Cannot delete category. ${productsUsingCategory.length} product(s) are using this category.`,
+                productsCount: productsUsingCategory.length
             });
         }
 
         // Delete category
-        await db.run('DELETE FROM categories WHERE id = ?', [id]);
+        db.deleteRow('categories', id);
         res.json({ message: 'Category deleted successfully', category });
     } catch (error) {
         console.error('Error deleting category:', error);

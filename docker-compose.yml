@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
   # Backend API (Node.js + SQLite)
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+    image: hey-backend:latest
     container_name: heypotu-backend
     environment:
       - NODE_ENV=production
@@ -13,8 +13,6 @@ services:
     networks:
       - heypotu-network
     restart: unless-stopped
-    volumes:
-      - heypotu-data:/app
 
   # Frontend React App
   frontend:
@@ -22,6 +20,7 @@ services:
       context: ./frontend
       args:
         - VITE_API_URL=/api
+    image: hey-frontend:latest
     container_name: heypotu-frontend
     ports:
       - "1111:80"
@@ -34,7 +33,3 @@ services:
 networks:
   heypotu-network:
     driver: bridge
-
-volumes:
-  heypotu-data:
-    driver: local

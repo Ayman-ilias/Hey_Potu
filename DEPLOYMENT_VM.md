@@ -29,9 +29,10 @@ docker-compose down
 - **Backend**: Port 3000
 
 ### Database
-- SQLite database is automatically created on first run
-- Data persists in a Docker named volume (`heypotu-data`)
-- Database file location inside container: `/app/database.sqlite`
+- Excel database is automatically created on first run
+- Data stored in `backend/database.xlsx`
+- Each table is a separate sheet (products, orders, customers, etc.)
+- Fast startup - no compilation required!
 
 ## What's Included
 
@@ -47,8 +48,8 @@ docker-compose down
 - The application uses **port 1111** for the frontend
 - The backend runs on **port 3000**
 - All API calls are proxied through nginx, so you only need to expose port 1111
-- Database persists between restarts
-- SQLite is automatically installed inside the Docker container (no need to install on VM)
+- Excel database file persists between restarts
+- No native compilation - super fast Docker builds!
 
 ## Troubleshooting
 
@@ -92,15 +93,19 @@ docker-compose up -d --build
 
 **Backup database:**
 ```bash
-docker exec heypotu-backend cp /app/database.sqlite /app/database.backup.sqlite
-docker cp heypotu-backend:/app/database.backup.sqlite ./database-backup-$(date +%Y%m%d).sqlite
+docker cp heypotu-backend:/app/database.xlsx ./database-backup-$(date +%Y%m%d).xlsx
 ```
 
 **Restore database:**
 ```bash
-docker cp ./database-backup.sqlite heypotu-backend:/app/database.sqlite
+docker cp ./database-backup.xlsx heypotu-backend:/app/database.xlsx
 docker-compose restart backend
 ```
+
+**Edit database directly:**
+- Download: `docker cp heypotu-backend:/app/database.xlsx ./database.xlsx`
+- Edit in Excel/LibreOffice
+- Upload: `docker cp ./database.xlsx heypotu-backend:/app/database.xlsx`
 
 ---
 

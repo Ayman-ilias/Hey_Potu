@@ -3,44 +3,60 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all customers
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
     try {
-        // Fetch customers and calculate purchased products manually or via subquery
-        // SQLite doesn't support complex JSON aggregation easily, so we'll do a simpler query
-        const customers = await db.all(`
-            SELECT c.*, 
-            (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count
-            FROM customers c
-            ORDER BY c.created_at DESC
-        `);
-        res.json(customers);
+        const customers = db.getAll('customers');
+        const orders = db.getAll('orders');
+
+        // Calculate order count for each customer
+        const customersWithCount = customers.map(c => ({
+            ...c,
+            order_count: orders.filter(o => o.customer_id === c.id).length
+        }));
+
+        // Sort by created_at DESC
+        customersWithCount.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        res.json(customersWithCount);
     } catch (error) {
         console.error('Error fetching customers:', error);
         res.status(500).json({ error: 'Failed to fetch customers' });
     }
 });
 
-// Get customers with products (simplified for SQLite)
-router.get('/with-products', async (req, res) => {
+// Get customers with products
+router.get('/with-products', (req, res) => {
     try {
-        const customers = await db.all(`
-            SELECT c.*, 
-                   GROUP_CONCAT(DISTINCT p.item_name) as purchased_products
-            FROM customers c
-            LEFT JOIN orders o ON c.id = o.customer_id
-            LEFT JOIN order_items oi ON o.id = oi.order_id
-            LEFT JOIN products p ON oi.product_id = p.id
-            GROUP BY c.id
-            ORDER BY c.created_at DESC
-        `);
+        const customers = db.getAll('customers');
+        const orders = db.getAll('orders');
+        const orderItems = db.getAll('order_items');
+        const products = db.getAll('products');
 
-        // Transform the string list back to array if needed, or keep as string
-        const formattedCustomers = customers.map(c => ({
-            ...c,
-            purchased_products: c.purchased_products ? c.purchased_products.split(',') : []
-        }));
+        const customersWithProducts = customers.map(c => {
+            // Find all orders for this customer
+            const customerOrders = orders.filter(o => o.customer_id === c.id);
+            const orderIds = customerOrders.map(o => o.id);
 
-        res.json(formattedCustomers);
+            // Find all order items for these orders
+            const items = orderItems.filter(oi => orderIds.includes(oi.order_id));
+
+            // Get unique product names
+            const productIds = [...new Set(items.map(oi => oi.product_id))];
+            const purchasedProducts = productIds.map(pid => {
+                const product = products.find(p => p.id === pid);
+                return product ? product.item_name : null;
+            }).filter(name => name !== null);
+
+            return {
+                ...c,
+                purchased_products: purchasedProducts
+            };
+        });
+
+        // Sort by created_at DESC
+        customersWithProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        res.json(customersWithProducts);
     } catch (error) {
         console.error('Error fetching customers with products:', error);
         res.status(500).json({ error: 'Failed to fetch customers' });
@@ -48,10 +64,10 @@ router.get('/with-products', async (req, res) => {
 });
 
 // Get single customer
-router.get('/:id', async (req, res) => {
+router.get('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+        const customer = db.getById('customers', id);
 
         if (!customer) {
             return res.status(404).json({ error: 'Customer not found' });
@@ -65,16 +81,18 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create customer
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
     try {
         const { customer_name, phone, email, address } = req.body;
 
-        const result = await db.run(`
-            INSERT INTO customers (customer_name, phone, email, address)
-            VALUES (?, ?, ?, ?)
-        `, [customer_name, phone, email, address]);
+        const result = db.insert('customers', {
+            customer_name,
+            phone,
+            email,
+            address
+        });
 
-        const newCustomer = await db.get('SELECT * FROM customers WHERE id = ?', [result.id]);
+        const newCustomer = db.getById('customers', result.id);
         res.status(201).json(newCustomer);
     } catch (error) {
         console.error('Error creating customer:', error);
@@ -83,22 +101,23 @@ router.post('/', async (req, res) => {
 });
 
 // Update customer
-router.put('/:id', async (req, res) => {
+router.put('/:id', (req, res) => {
     try {
         const { id } = req.params;
         const { customer_name, phone, email, address } = req.body;
 
-        const result = await db.run(`
-            UPDATE customers 
-            SET customer_name = ?, phone = ?, email = ?, address = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `, [customer_name, phone, email, address, id]);
+        const result = db.update('customers', id, {
+            customer_name,
+            phone,
+            email,
+            address
+        });
 
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        const updatedCustomer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+        const updatedCustomer = db.getById('customers', id);
         res.json(updatedCustomer);
     } catch (error) {
         console.error('Error updating customer:', error);
@@ -107,16 +126,16 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete customer
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
+        const customer = db.getById('customers', id);
 
         if (!customer) {
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        await db.run('DELETE FROM customers WHERE id = ?', [id]);
+        db.deleteRow('customers', id);
         res.json({ message: 'Customer deleted successfully', customer });
     } catch (error) {
         console.error('Error deleting customer:', error);

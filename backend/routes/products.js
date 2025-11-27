@@ -3,13 +3,12 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all products
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
     try {
-        const products = await db.all(`
-            SELECT *, (total_stock - sold_items) as remaining_items 
-            FROM products 
-            ORDER BY created_at DESC
-        `);
+        const products = db.getAll('products').map(p => ({
+            ...p,
+            remaining_items: (p.total_stock || 0) - (p.sold_items || 0)
+        }));
         res.json(products);
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -18,10 +17,10 @@ router.get('/', async (req, res) => {
 });
 
 // Get single product
-router.get('/:id', async (req, res) => {
+router.get('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const product = await db.get('SELECT * FROM products WHERE id = ?', [id]);
+        const product = db.getById('products', id);
 
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
@@ -35,52 +34,57 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create product
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
     try {
         let { serial_no, product_code, item_name, item_category, unit, total_stock, price } = req.body;
 
         // Auto-generate serial number if not provided
         if (!serial_no) {
             const timestamp = Date.now();
-            const random = Math.floor(1000 + Math.random() * 9000); // 4-digit random
+            const random = Math.floor(1000 + Math.random() * 9000);
             serial_no = `PROD-${timestamp}-${random}`;
         }
 
-        const result = await db.run(`
-            INSERT INTO products (serial_no, product_code, item_name, item_category, unit, total_stock, price)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [serial_no, product_code, item_name, item_category, unit || 'pcs', total_stock || 0, price || 0]);
+        const result = db.insert('products', {
+            serial_no,
+            product_code,
+            item_name,
+            item_category,
+            unit: unit || 'pcs',
+            total_stock: total_stock || 0,
+            sold_items: 0,
+            price: price || 0
+        });
 
-        const newProduct = await db.get('SELECT * FROM products WHERE id = ?', [result.id]);
+        const newProduct = db.getById('products', result.id);
         res.status(201).json(newProduct);
     } catch (error) {
         console.error('Error creating product:', error);
-        if (error.message.includes('UNIQUE constraint failed')) {
-            res.status(409).json({ error: 'Product code or serial number already exists' });
-        } else {
-            res.status(500).json({ error: 'Failed to create product' });
-        }
+        res.status(500).json({ error: 'Failed to create product' });
     }
 });
 
 // Update product
-router.put('/:id', async (req, res) => {
+router.put('/:id', (req, res) => {
     try {
         const { id } = req.params;
         const { serial_no, product_code, item_name, item_category, unit, total_stock, price } = req.body;
 
-        const result = await db.run(`
-            UPDATE products 
-            SET serial_no = ?, product_code = ?, item_name = ?, item_category = ?,
-                unit = ?, total_stock = ?, price = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `, [serial_no, product_code, item_name, item_category, unit, total_stock, price, id]);
+        const result = db.update('products', id, {
+            serial_no,
+            product_code,
+            item_name,
+            item_category,
+            unit,
+            total_stock,
+            price
+        });
 
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Product not found' });
         }
 
-        const updatedProduct = await db.get('SELECT * FROM products WHERE id = ?', [id]);
+        const updatedProduct = db.getById('products', id);
         res.json(updatedProduct);
     } catch (error) {
         console.error('Error updating product:', error);
@@ -89,16 +93,16 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete product
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const product = await db.get('SELECT * FROM products WHERE id = ?', [id]);
+        const product = db.getById('products', id);
 
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
         }
 
-        await db.run('DELETE FROM products WHERE id = ?', [id]);
+        db.deleteRow('products', id);
         res.json({ message: 'Product deleted successfully', product });
     } catch (error) {
         console.error('Error deleting product:', error);
@@ -107,15 +111,16 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Get low stock products
-router.get('/alerts/low-stock', async (req, res) => {
+router.get('/alerts/low-stock', (req, res) => {
     try {
         const threshold = req.query.threshold || 10;
-        const products = await db.all(`
-            SELECT *, (total_stock - sold_items) as remaining_items 
-            FROM products 
-            WHERE (total_stock - sold_items) <= ? AND (total_stock - sold_items) > 0
-            ORDER BY remaining_items ASC
-        `, [threshold]);
+        const products = db.query('products', p => {
+            const remaining = (p.total_stock || 0) - (p.sold_items || 0);
+            return remaining <= threshold && remaining > 0;
+        }).map(p => ({
+            ...p,
+            remaining_items: (p.total_stock || 0) - (p.sold_items || 0)
+        }));
 
         res.json(products);
     } catch (error) {
