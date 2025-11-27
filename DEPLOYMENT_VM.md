@@ -29,9 +29,9 @@ docker-compose down
 - **Backend**: Port 3000
 
 ### Database
-- SQLite database file: `backend/database.sqlite`
-- Automatically created on first run
-- Data persists via Docker volumes
+- SQLite database is automatically created on first run
+- Data persists in a Docker named volume (`heypotu-data`)
+- Database file location inside container: `/app/database.sqlite`
 
 ## What's Included
 
@@ -79,6 +79,26 @@ docker logs heypotu-backend
 **Restart containers:**
 ```bash
 docker-compose restart
+```
+
+## Database Management
+
+**Reset database (WARNING: deletes all data):**
+```bash
+docker-compose down -v
+docker-compose up -d --build
+```
+
+**Backup database:**
+```bash
+docker exec heypotu-backend cp /app/database.sqlite /app/database.backup.sqlite
+docker cp heypotu-backend:/app/database.backup.sqlite ./database-backup-$(date +%Y%m%d).sqlite
+```
+
+**Restore database:**
+```bash
+docker cp ./database-backup.sqlite heypotu-backend:/app/database.sqlite
+docker-compose restart backend
 ```
 
 ---

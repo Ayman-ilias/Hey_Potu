@@ -14,7 +14,7 @@ services:
       - heypotu-network
     restart: unless-stopped
     volumes:
-      - ./backend/database.sqlite:/app/database.sqlite
+      - heypotu-data:/app
 
   # Frontend React App
   frontend:
@@ -34,3 +34,7 @@ services:
 networks:
   heypotu-network:
     driver: bridge
+
+volumes:
+  heypotu-data:
+    driver: local

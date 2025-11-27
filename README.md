@@ -121,8 +121,9 @@ Hey_Potu/
 - Backend: Port 3000 (API)
 
 ### Database
-- SQLite database is automatically created in `backend/database.sqlite`
-- Data persists through container restarts via Docker volumes
+- SQLite database is automatically created on first run
+- Data persists in a Docker named volume (`heypotu-data`)
+- Database file location inside container: `/app/database.sqlite`
 
 ## 🌐 API Endpoints
 
@@ -174,7 +175,8 @@ docker-compose logs
 - Change ports in `docker-compose.yml` if 80 or 5001 are in use
 
 **Database issues:**
-- Delete `backend/database.sqlite` and restart containers for fresh database
+- Reset database: `docker-compose down -v && docker-compose up -d --build`
+- The `-v` flag removes the volume with the database
 
 **Frontend not loading:**
 - Clear browser cache
