@@ -508,19 +508,27 @@ function Orders() {
                             )}
                         </div>
 
-                        {/* Product Grid */}
-                        <div className="product-grid">
+                        {/* Product List */}
+                        <div className="product-list">
                             {filteredProducts.map(product => (
-                                <div key={product.id} className="product-card" onClick={() => addToCart(product)}>
-                                    <div className="card-content">
-                                        <div className="card-header">
-                                            <span className="product-code">{product.product_code}</span>
-                                            <span className={`stock-tag ${product.remaining_items <= 10 ? 'low' : ''}`}>
-                                                {product.remaining_items} left
+                                <div key={product.id} className="product-list-item" onClick={() => addToCart(product)}>
+                                    <div className="product-list-info">
+                                        <div className="product-list-main">
+                                            <h4 className="product-list-name">{product.item_name}</h4>
+                                            <span className="product-list-code">{product.product_code}</span>
+                                        </div>
+                                        <span className="product-list-category">{product.item_category}</span>
+                                    </div>
+                                    <div className="product-list-actions">
+                                        <div className="product-list-stock">
+                                            <span className={`stock-badge ${product.remaining_items <= 10 ? 'low' : ''}`}>
+                                                {product.remaining_items} in stock
                                             </span>
                                         </div>
-                                        <h4 className="product-name">{product.item_name}</h4>
-                                        <p className="product-price">BDT {product.price}</p>
+                                        <span className="product-list-price">BDT {product.price}</span>
+                                        <button className="add-to-cart-btn" onClick={(e) => { e.stopPropagation(); addToCart(product); }}>
+                                            + Add
+                                        </button>
                                     </div>
                                 </div>
                             ))}

@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import './Navbar.css';
 import logo from '/logo.jpg';
 
-function Navbar() {
+function Navbar({ onLogout }) {
     return (
         <nav className="navbar">
             <div className="navbar-container">
@@ -35,6 +35,10 @@ function Navbar() {
                     <NavLink to="/reports" className={({ isActive }) => isActive ? 'active' : ''}>
                         📈 Reports
                     </NavLink>
+
+                    <button onClick={onLogout} className="logout-button">
+                        🚪 Logout
+                    </button>
                 </div>
             </div>
         </nav>

@@ -92,6 +92,27 @@
     transform: scaleX(1);
 }
 
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.logout-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
 /* Mobile Responsive */
 @media (max-width: 1024px) {
     .navbar-menu {
