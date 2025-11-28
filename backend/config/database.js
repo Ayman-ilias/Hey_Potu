@@ -20,24 +20,34 @@ const TABLES = {
 
 // Initialize CSV files with headers if they don't exist
 const initializeFiles = () => {
-    const headers = {
-        products: ['id', 'serial_no', 'product_code', 'item_name', 'item_category', 'unit', 'total_stock', 'sold_items', 'price', 'created_at', 'updated_at'],
-        customers: ['id', 'customer_name', 'phone', 'email', 'address', 'created_at', 'updated_at'],
-        orders: ['id', 'order_number', 'customer_id', 'customer_name', 'order_date', 'total_amount', 'status', 'notes', 'created_at', 'updated_at'],
-        order_items: ['id', 'order_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'subtotal', 'created_at'],
-        categories: ['id', 'name', 'created_at']
-    };
+    const sampleData = require('./sampleData');
+    let needsSampleData = false;
 
     Object.keys(TABLES).forEach(table => {
         if (!fs.existsSync(TABLES[table])) {
-            const stream = format({ headers: true });
-            const ws = fs.createWriteStream(TABLES[table]);
-            stream.pipe(ws);
-            stream.end();
+            needsSampleData = true;
+            // Create file with sample data
+            if (sampleData[table] && sampleData[table].length > 0) {
+                const stream = format({ headers: true });
+                const ws = fs.createWriteStream(TABLES[table]);
+                stream.pipe(ws);
+                sampleData[table].forEach(row => stream.write(row));
+                stream.end();
+            } else {
+                // Create empty file with headers
+                const stream = format({ headers: true });
+                const ws = fs.createWriteStream(TABLES[table]);
+                stream.pipe(ws);
+                stream.end();
+            }
         }
     });
 
-    console.log('CSV database initialized');
+    if (needsSampleData) {
+        console.log('CSV database initialized with sample data');
+    } else {
+        console.log('CSV database initialized');
+    }
 };
 
 // Read all rows from a CSV file
