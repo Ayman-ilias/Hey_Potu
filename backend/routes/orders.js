@@ -3,11 +3,11 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all orders
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const orders = db.getAll('orders');
-    const customers = db.getAll('customers');
-    const orderItems = db.getAll('order_items');
+    const orders = await db.getAll('orders');
+    const customers = await db.getAll('customers');
+    const orderItems = await db.getAll('order_items');
 
     const ordersWithDetails = orders.map(o => {
       const customer = customers.find(c => c.id === o.customer_id);
@@ -32,17 +32,17 @@ router.get('/', (req, res) => {
 });
 
 // Get single order
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const order = db.getById('orders', id);
+    const order = await db.getById('orders', id);
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const customer = db.getById('customers', order.customer_id);
-    const items = db.query('order_items', oi => oi.order_id === parseInt(id));
+    const customer = await db.getById('customers', order.customer_id);
+    const items = await db.query('order_items', oi => oi.order_id === parseInt(id));
 
     const orderWithDetails = {
       ...order,
@@ -61,7 +61,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new order
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { customer_name, customer_phone, customer_email, customer_address, items, notes } = req.body;
 
@@ -71,18 +71,19 @@ router.post('/', (req, res) => {
 
     // 1. Find or Create Customer
     let customerId;
-    const existingCustomer = db.query('customers', c => c.phone === customer_phone)[0];
+    const existingCustomers = await db.query('customers', c => c.phone === customer_phone);
+    const existingCustomer = existingCustomers[0];
 
     if (existingCustomer) {
       customerId = existingCustomer.id;
       // Update customer details if provided
-      db.update('customers', customerId, {
+      await db.update('customers', customerId, {
         customer_name: customer_name || existingCustomer.customer_name,
         email: customer_email || existingCustomer.email,
         address: customer_address || existingCustomer.address
       });
     } else {
-      const result = db.insert('customers', {
+      const result = await db.insert('customers', {
         customer_name,
         phone: customer_phone,
         email: customer_email,
@@ -98,7 +99,7 @@ router.post('/', (req, res) => {
     const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
 
     // 4. Insert order
-    const orderResult = db.insert('orders', {
+    const orderResult = await db.insert('orders', {
       order_number: orderNumber,
       customer_id: customerId,
       customer_name,
@@ -110,7 +111,7 @@ router.post('/', (req, res) => {
 
     // 5. Insert order items and update product stock
     for (const item of items) {
-      db.insert('order_items', {
+      await db.insert('order_items', {
         order_id: orderId,
         product_id: item.product_id,
         product_name: item.product_name,
@@ -119,9 +120,9 @@ router.post('/', (req, res) => {
         subtotal: item.subtotal
       });
 
-      const product = db.getById('products', item.product_id);
+      const product = await db.getById('products', item.product_id);
       if (product) {
-        db.update('products', item.product_id, {
+        await db.update('products', item.product_id, {
           sold_items: (product.sold_items || 0) + item.quantity
         });
       }
@@ -139,12 +140,12 @@ router.post('/', (req, res) => {
 });
 
 // Update order status
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
 
-    const result = db.update('orders', id, {
+    const result = await db.update('orders', id, {
       status,
       notes
     });
@@ -153,7 +154,7 @@ router.put('/:id', (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const updatedOrder = db.getById('orders', id);
+    const updatedOrder = await db.getById('orders', id);
     res.json(updatedOrder);
   } catch (error) {
     console.error('Error updating order:', error);
@@ -162,31 +163,31 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete order
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
     // Get order items to restore stock
-    const items = db.query('order_items', oi => oi.order_id === parseInt(id));
+    const items = await db.query('order_items', oi => oi.order_id === parseInt(id));
 
     // Restore stock
     for (const item of items) {
-      const product = db.getById('products', item.product_id);
+      const product = await db.getById('products', item.product_id);
       if (product) {
-        db.update('products', item.product_id, {
+        await db.update('products', item.product_id, {
           sold_items: (product.sold_items || 0) - item.quantity
         });
       }
     }
 
     // Delete order items
-    const orderItems = db.query('order_items', oi => oi.order_id === parseInt(id));
+    const orderItems = await db.query('order_items', oi => oi.order_id === parseInt(id));
     for (const item of orderItems) {
-      db.deleteRow('order_items', item.id);
+      await db.deleteRow('order_items', item.id);
     }
 
     // Delete order
-    db.deleteRow('orders', id);
+    await db.deleteRow('orders', id);
 
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {

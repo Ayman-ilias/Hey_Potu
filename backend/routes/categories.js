@@ -3,9 +3,9 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all categories
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const categories = db.getAll('categories');
+        const categories = await db.getAll('categories');
 
         // Sort by name ASC
         categories.sort((a, b) => a.name.localeCompare(b.name));
@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
 });
 
 // Create category
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { name } = req.body;
 
@@ -27,13 +27,13 @@ router.post('/', (req, res) => {
         }
 
         // Check if category already exists
-        const existing = db.query('categories', c => c.name === name);
+        const existing = await db.query('categories', c => c.name === name);
         if (existing.length > 0) {
             return res.status(409).json({ error: 'Category already exists' });
         }
 
-        const result = db.insert('categories', { name });
-        const newCategory = db.getById('categories', result.id);
+        const result = await db.insert('categories', { name });
+        const newCategory = await db.getById('categories', result.id);
 
         res.status(201).json(newCategory);
     } catch (error) {
@@ -43,18 +43,18 @@ router.post('/', (req, res) => {
 });
 
 // Delete category
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
         // Check if category exists
-        const category = db.getById('categories', id);
+        const category = await db.getById('categories', id);
         if (!category) {
             return res.status(404).json({ error: 'Category not found' });
         }
 
         // Check if category is in use
-        const productsUsingCategory = db.query('products', p => p.item_category === category.name);
+        const productsUsingCategory = await db.query('products', p => p.item_category === category.name);
 
         if (productsUsingCategory.length > 0) {
             return res.status(409).json({
@@ -64,7 +64,7 @@ router.delete('/:id', (req, res) => {
         }
 
         // Delete category
-        db.deleteRow('categories', id);
+        await db.deleteRow('categories', id);
         res.json({ message: 'Category deleted successfully', category });
     } catch (error) {
         console.error('Error deleting category:', error);

@@ -1,54 +1,103 @@
-const XLSX = require('xlsx');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const csvParser = require('csv-parser');
+const { format } = require('@fast-csv/format');
 
-const DB_PATH = path.resolve(__dirname, '../database.xlsx');
+const DATA_DIR = path.resolve(__dirname, '../data');
 
-// Initialize workbook
-let workbook;
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-// Initialize database with empty sheets
-const initializeDatabase = () => {
-    if (fs.existsSync(DB_PATH)) {
-        workbook = XLSX.readFile(DB_PATH);
-    } else {
-        workbook = XLSX.utils.book_new();
-
-        // Create empty sheets
-        const sheets = ['products', 'customers', 'orders', 'order_items', 'categories'];
-        sheets.forEach(sheetName => {
-            const ws = XLSX.utils.aoa_to_sheet([[]]);
-            XLSX.utils.book_append_sheet(workbook, ws, sheetName);
-        });
-
-        saveWorkbook();
-    }
-    console.log('Connected to Excel database');
+const TABLES = {
+    products: path.join(DATA_DIR, 'products.csv'),
+    customers: path.join(DATA_DIR, 'customers.csv'),
+    orders: path.join(DATA_DIR, 'orders.csv'),
+    order_items: path.join(DATA_DIR, 'order_items.csv'),
+    categories: path.join(DATA_DIR, 'categories.csv')
 };
 
-// Save workbook to file
-const saveWorkbook = () => {
-    XLSX.writeFile(workbook, DB_PATH);
+// Initialize CSV files with headers if they don't exist
+const initializeFiles = () => {
+    const headers = {
+        products: ['id', 'serial_no', 'product_code', 'item_name', 'item_category', 'unit', 'total_stock', 'sold_items', 'price', 'created_at', 'updated_at'],
+        customers: ['id', 'customer_name', 'phone', 'email', 'address', 'created_at', 'updated_at'],
+        orders: ['id', 'order_number', 'customer_id', 'customer_name', 'order_date', 'total_amount', 'status', 'notes', 'created_at', 'updated_at'],
+        order_items: ['id', 'order_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'subtotal', 'created_at'],
+        categories: ['id', 'name', 'created_at']
+    };
+
+    Object.keys(TABLES).forEach(table => {
+        if (!fs.existsSync(TABLES[table])) {
+            const stream = format({ headers: true });
+            const ws = fs.createWriteStream(TABLES[table]);
+            stream.pipe(ws);
+            stream.end();
+        }
+    });
+
+    console.log('CSV database initialized');
 };
 
-// Get all rows from a sheet
-const getAll = (sheetName) => {
-    const worksheet = workbook.Sheets[sheetName];
-    if (!worksheet) return [];
+// Read all rows from a CSV file
+const getAll = (tableName) => {
+    return new Promise((resolve, reject) => {
+        const results = [];
+        const filePath = TABLES[tableName];
 
-    const data = XLSX.utils.sheet_to_json(worksheet);
-    return data;
+        if (!fs.existsSync(filePath)) {
+            return resolve([]);
+        }
+
+        fs.createReadStream(filePath)
+            .pipe(csvParser())
+            .on('data', (data) => {
+                // Convert string numbers to actual numbers
+                if (data.id) data.id = parseInt(data.id);
+                if (data.total_stock) data.total_stock = parseInt(data.total_stock);
+                if (data.sold_items) data.sold_items = parseInt(data.sold_items);
+                if (data.price) data.price = parseFloat(data.price);
+                if (data.quantity) data.quantity = parseInt(data.quantity);
+                if (data.unit_price) data.unit_price = parseFloat(data.unit_price);
+                if (data.subtotal) data.subtotal = parseFloat(data.subtotal);
+                if (data.total_amount) data.total_amount = parseFloat(data.total_amount);
+                if (data.customer_id) data.customer_id = parseInt(data.customer_id);
+                if (data.product_id) data.product_id = parseInt(data.product_id);
+                if (data.order_id) data.order_id = parseInt(data.order_id);
+
+                results.push(data);
+            })
+            .on('end', () => resolve(results))
+            .on('error', reject);
+    });
 };
 
 // Get single row by ID
-const getById = (sheetName, id) => {
-    const data = getAll(sheetName);
+const getById = async (tableName, id) => {
+    const data = await getAll(tableName);
     return data.find(row => row.id == id);
 };
 
+// Write all data to CSV
+const writeAll = (tableName, data) => {
+    return new Promise((resolve, reject) => {
+        const filePath = TABLES[tableName];
+        const stream = format({ headers: true });
+        const ws = fs.createWriteStream(filePath);
+
+        stream.pipe(ws);
+        data.forEach(row => stream.write(row));
+        stream.end();
+
+        ws.on('finish', resolve);
+        ws.on('error', reject);
+    });
+};
+
 // Insert new row
-const insert = (sheetName, data) => {
-    const allData = getAll(sheetName);
+const insert = async (tableName, data) => {
+    const allData = await getAll(tableName);
     const newId = allData.length > 0 ? Math.max(...allData.map(r => r.id || 0)) + 1 : 1;
 
     const newRow = {
@@ -59,17 +108,14 @@ const insert = (sheetName, data) => {
     };
 
     allData.push(newRow);
-
-    const worksheet = XLSX.utils.json_to_sheet(allData);
-    workbook.Sheets[sheetName] = worksheet;
-    saveWorkbook();
+    await writeAll(tableName, allData);
 
     return { id: newId, changes: 1 };
 };
 
 // Update existing row
-const update = (sheetName, id, updates) => {
-    const allData = getAll(sheetName);
+const update = async (tableName, id, updates) => {
+    const allData = await getAll(tableName);
     const index = allData.findIndex(row => row.id == id);
 
     if (index === -1) {
@@ -82,33 +128,27 @@ const update = (sheetName, id, updates) => {
         updated_at: new Date().toISOString()
     };
 
-    const worksheet = XLSX.utils.json_to_sheet(allData);
-    workbook.Sheets[sheetName] = worksheet;
-    saveWorkbook();
-
+    await writeAll(tableName, allData);
     return { changes: 1 };
 };
 
 // Delete row
-const deleteRow = (sheetName, id) => {
-    const allData = getAll(sheetName);
+const deleteRow = async (tableName, id) => {
+    const allData = await getAll(tableName);
     const filtered = allData.filter(row => row.id != id);
 
-    const worksheet = XLSX.utils.json_to_sheet(filtered);
-    workbook.Sheets[sheetName] = worksheet;
-    saveWorkbook();
-
+    await writeAll(tableName, filtered);
     return { changes: 1 };
 };
 
 // Custom query support
-const query = (sheetName, filterFn) => {
-    const allData = getAll(sheetName);
+const query = async (tableName, filterFn) => {
+    const allData = await getAll(tableName);
     return allData.filter(filterFn);
 };
 
 // Initialize on load
-initializeDatabase();
+initializeFiles();
 
 module.exports = {
     getAll,
@@ -116,6 +156,5 @@ module.exports = {
     insert,
     update,
     deleteRow,
-    query,
-    saveWorkbook
+    query
 };

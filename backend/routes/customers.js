@@ -3,10 +3,10 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all customers
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const customers = db.getAll('customers');
-        const orders = db.getAll('orders');
+        const customers = await db.getAll('customers');
+        const orders = await db.getAll('orders');
 
         // Calculate order count for each customer
         const customersWithCount = customers.map(c => ({
@@ -25,12 +25,12 @@ router.get('/', (req, res) => {
 });
 
 // Get customers with products
-router.get('/with-products', (req, res) => {
+router.get('/with-products', async (req, res) => {
     try {
-        const customers = db.getAll('customers');
-        const orders = db.getAll('orders');
-        const orderItems = db.getAll('order_items');
-        const products = db.getAll('products');
+        const customers = await db.getAll('customers');
+        const orders = await db.getAll('orders');
+        const orderItems = await db.getAll('order_items');
+        const products = await db.getAll('products');
 
         const customersWithProducts = customers.map(c => {
             // Find all orders for this customer
@@ -64,10 +64,10 @@ router.get('/with-products', (req, res) => {
 });
 
 // Get single customer
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const customer = db.getById('customers', id);
+        const customer = await db.getById('customers', id);
 
         if (!customer) {
             return res.status(404).json({ error: 'Customer not found' });
@@ -81,18 +81,18 @@ router.get('/:id', (req, res) => {
 });
 
 // Create customer
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { customer_name, phone, email, address } = req.body;
 
-        const result = db.insert('customers', {
+        const result = await db.insert('customers', {
             customer_name,
             phone,
             email,
             address
         });
 
-        const newCustomer = db.getById('customers', result.id);
+        const newCustomer = await db.getById('customers', result.id);
         res.status(201).json(newCustomer);
     } catch (error) {
         console.error('Error creating customer:', error);
@@ -101,12 +101,12 @@ router.post('/', (req, res) => {
 });
 
 // Update customer
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { customer_name, phone, email, address } = req.body;
 
-        const result = db.update('customers', id, {
+        const result = await db.update('customers', id, {
             customer_name,
             phone,
             email,
@@ -117,7 +117,7 @@ router.put('/:id', (req, res) => {
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        const updatedCustomer = db.getById('customers', id);
+        const updatedCustomer = await db.getById('customers', id);
         res.json(updatedCustomer);
     } catch (error) {
         console.error('Error updating customer:', error);
@@ -126,16 +126,16 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete customer
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const customer = db.getById('customers', id);
+        const customer = await db.getById('customers', id);
 
         if (!customer) {
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        db.deleteRow('customers', id);
+        await db.deleteRow('customers', id);
         res.json({ message: 'Customer deleted successfully', customer });
     } catch (error) {
         console.error('Error deleting customer:', error);

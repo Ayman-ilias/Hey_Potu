@@ -3,12 +3,12 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Dashboard Stats
-router.get('/dashboard', (req, res) => {
+router.get('/dashboard', async (req, res) => {
   try {
-    const products = db.getAll('products');
-    const orders = db.getAll('orders');
-    const customers = db.getAll('customers');
-    const orderItems = db.getAll('order_items');
+    const products = await db.getAll('products');
+    const orders = await db.getAll('orders');
+    const customers = await db.getAll('customers');
+    const orderItems = await db.getAll('order_items');
 
     // Total Products
     const totalProducts = products.length;
@@ -74,9 +74,9 @@ router.get('/dashboard', (req, res) => {
 });
 
 // Inventory Report
-router.get('/inventory', (req, res) => {
+router.get('/inventory', async (req, res) => {
   try {
-    const products = db.getAll('products');
+    const products = await db.getAll('products');
 
     const inventory = products.map(p => ({
       ...p,
@@ -96,11 +96,11 @@ router.get('/inventory', (req, res) => {
 });
 
 // Sales Report
-router.get('/sales', (req, res) => {
+router.get('/sales', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const orders = db.getAll('orders');
-    const customers = db.getAll('customers');
+    const orders = await db.getAll('orders');
+    const customers = await db.getAll('customers');
 
     let filteredOrders = orders;
 
@@ -147,10 +147,10 @@ router.get('/sales', (req, res) => {
 });
 
 // Customer Report
-router.get('/customers', (req, res) => {
+router.get('/customers', async (req, res) => {
   try {
-    const customers = db.getAll('customers');
-    const orders = db.getAll('orders');
+    const customers = await db.getAll('customers');
+    const orders = await db.getAll('orders');
 
     const customerReport = customers.map(c => {
       const customerOrders = orders.filter(o => o.customer_id === c.id);

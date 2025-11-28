@@ -3,13 +3,14 @@ const router = express.Router();
 const db = require('../config/database');
 
 // Get all products
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const products = db.getAll('products').map(p => ({
+        const products = await db.getAll('products');
+        const productsWithRemaining = products.map(p => ({
             ...p,
             remaining_items: (p.total_stock || 0) - (p.sold_items || 0)
         }));
-        res.json(products);
+        res.json(productsWithRemaining);
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).json({ error: 'Failed to fetch products' });
@@ -17,10 +18,10 @@ router.get('/', (req, res) => {
 });
 
 // Get single product
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const product = db.getById('products', id);
+        const product = await db.getById('products', id);
 
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
@@ -34,7 +35,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create product
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         let { serial_no, product_code, item_name, item_category, unit, total_stock, price } = req.body;
 
@@ -45,7 +46,7 @@ router.post('/', (req, res) => {
             serial_no = `PROD-${timestamp}-${random}`;
         }
 
-        const result = db.insert('products', {
+        const result = await db.insert('products', {
             serial_no,
             product_code,
             item_name,
@@ -56,7 +57,7 @@ router.post('/', (req, res) => {
             price: price || 0
         });
 
-        const newProduct = db.getById('products', result.id);
+        const newProduct = await db.getById('products', result.id);
         res.status(201).json(newProduct);
     } catch (error) {
         console.error('Error creating product:', error);
@@ -65,12 +66,12 @@ router.post('/', (req, res) => {
 });
 
 // Update product
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { serial_no, product_code, item_name, item_category, unit, total_stock, price } = req.body;
 
-        const result = db.update('products', id, {
+        const result = await db.update('products', id, {
             serial_no,
             product_code,
             item_name,
@@ -84,7 +85,7 @@ router.put('/:id', (req, res) => {
             return res.status(404).json({ error: 'Product not found' });
         }
 
-        const updatedProduct = db.getById('products', id);
+        const updatedProduct = await db.getById('products', id);
         res.json(updatedProduct);
     } catch (error) {
         console.error('Error updating product:', error);
@@ -93,16 +94,16 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete product
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const product = db.getById('products', id);
+        const product = await db.getById('products', id);
 
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
         }
 
-        db.deleteRow('products', id);
+        await db.deleteRow('products', id);
         res.json({ message: 'Product deleted successfully', product });
     } catch (error) {
         console.error('Error deleting product:', error);
@@ -111,18 +112,20 @@ router.delete('/:id', (req, res) => {
 });
 
 // Get low stock products
-router.get('/alerts/low-stock', (req, res) => {
+router.get('/alerts/low-stock', async (req, res) => {
     try {
         const threshold = req.query.threshold || 10;
-        const products = db.query('products', p => {
+        const products = await db.query('products', p => {
             const remaining = (p.total_stock || 0) - (p.sold_items || 0);
             return remaining <= threshold && remaining > 0;
-        }).map(p => ({
+        });
+
+        const productsWithRemaining = products.map(p => ({
             ...p,
             remaining_items: (p.total_stock || 0) - (p.sold_items || 0)
         }));
 
-        res.json(products);
+        res.json(productsWithRemaining);
     } catch (error) {
         console.error('Error fetching low stock products:', error);
         res.status(500).json({ error: 'Failed to fetch low stock products' });

@@ -85,7 +85,7 @@ docker-compose down
 
 - **Frontend**: React 18 + Vite
 - **Backend**: Node.js + Express
-- **Database**: Excel (XLSX)
+- **Database**: CSV Files
 - **Deployment**: Docker Compose
 - **Export**: jsPDF, xlsx
 
@@ -121,9 +121,15 @@ Hey_Potu/
 - Backend: Port 3000 (API)
 
 ### Database
-- Excel database is automatically created on first run
-- Data stored in `backend/database.xlsx` with separate sheets for each table
+- CSV files are automatically created on first run
+- Data stored in `backend/data/` folder as separate CSV files
+  - `products.csv` - Product inventory
+  - `customers.csv` - Customer records
+  - `orders.csv` - Order history
+  - `order_items.csv` - Order line items
+  - `categories.csv` - Product categories
 - Fast, simple, and no compilation required!
+- Can be edited with Excel, LibreOffice, or any text editor
 
 ## 🌐 API Endpoints
 
@@ -175,8 +181,8 @@ docker-compose logs
 - Change ports in `docker-compose.yml` if 80 or 5001 are in use
 
 **Database issues:**
-- Delete `backend/database.xlsx` and restart containers for fresh database
-- You can also download and edit the Excel file directly!
+- Delete `backend/data/` folder and restart containers for fresh database
+- You can also download and edit CSV files directly!
 
 **Frontend not loading:**
 - Clear browser cache

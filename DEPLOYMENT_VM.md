@@ -29,10 +29,11 @@ docker-compose down
 - **Backend**: Port 3000
 
 ### Database
-- Excel database is automatically created on first run
-- Data stored in `backend/database.xlsx`
-- Each table is a separate sheet (products, orders, customers, etc.)
+- CSV database is automatically created on first run
+- Data stored in `backend/data/` as separate CSV files
+  - products.csv, customers.csv, orders.csv, order_items.csv, categories.csv
 - Fast startup - no compilation required!
+- Can be opened in Excel/LibreOffice or edited with any text editor
 
 ## What's Included
 
@@ -48,8 +49,8 @@ docker-compose down
 - The application uses **port 1111** for the frontend
 - The backend runs on **port 3000**
 - All API calls are proxied through nginx, so you only need to expose port 1111
-- Excel database file persists between restarts
-- No native compilation - super fast Docker builds!
+- CSV database files persist between restarts
+- No native compilation - super fast Docker builds (30 seconds!)
 
 ## Troubleshooting
 
@@ -93,19 +94,19 @@ docker-compose up -d --build
 
 **Backup database:**
 ```bash
-docker cp heypotu-backend:/app/database.xlsx ./database-backup-$(date +%Y%m%d).xlsx
+docker cp heypotu-backend:/app/data ./database-backup-$(date +%Y%m%d)
 ```
 
 **Restore database:**
 ```bash
-docker cp ./database-backup.xlsx heypotu-backend:/app/database.xlsx
+docker cp ./database-backup/data heypotu-backend:/app/
 docker-compose restart backend
 ```
 
 **Edit database directly:**
-- Download: `docker cp heypotu-backend:/app/database.xlsx ./database.xlsx`
-- Edit in Excel/LibreOffice
-- Upload: `docker cp ./database.xlsx heypotu-backend:/app/database.xlsx`
+- Download all CSVs: `docker cp heypotu-backend:/app/data ./data`
+- Edit in Excel/LibreOffice/Text Editor
+- Upload: `docker cp ./data heypotu-backend:/app/`
 
 ---
 
