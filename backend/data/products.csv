@@ -1,0 +1,6 @@
+id,serial_no,product_code,item_name,item_category,unit,total_stock,sold_items,price,created_at,updated_at
+1,PROD-001,SKU-001,Premium Headphones,Electronics,pcs,50,21,89.99,2024-01-15T00:00:00.000Z,2025-11-28T11:27:18.278Z
+2,PROD-002,SKU-002,Wireless Mouse,Electronics,pcs,100,53,29.99,2024-01-16T00:00:00.000Z,2025-11-28T11:24:56.383Z
+3,PROD-003,SKU-003,USB-C Cable,Accessories,pcs,200,121,12.99,2024-01-17T00:00:00.000Z,2025-11-28T11:24:56.402Z
+4,PROD-004,SKU-004,Laptop Stand,Accessories,pcs,30,9,45.5,2024-01-18T00:00:00.000Z,2025-11-28T11:24:56.420Z
+5,PROD-005,SKU-005,Mechanical Keyboard,Electronics,pcs,25,13,129.99,2024-01-19T00:00:00.000Z,2025-11-28T11:24:56.437Z

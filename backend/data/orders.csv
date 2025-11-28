@@ -1,0 +1,6 @@
+id,order_number,customer_id,customer_name,order_date,total_amount,status,notes,created_at,updated_at
+1,ORD-2024-001,1,John Doe,2024-01-20T00:00:00.000Z,149.98,completed,First order - electronics bundle,2024-01-20T00:00:00.000Z,2024-01-20T00:00:00.000Z
+2,ORD-2024-002,2,Jane Smith,2024-01-21T00:00:00.000Z,45.5,completed,Office setup,2024-01-21T00:00:00.000Z,2024-01-21T00:00:00.000Z
+3,ORD-2024-003,3,Bob Johnson,2024-01-22T00:00:00.000Z,272.95,completed,Bulk purchase,2024-01-22T00:00:00.000Z,2024-01-22T00:00:00.000Z
+4,ORD-1764329096362,4,ayman,,518.39,,,2025-11-28T11:24:56.367Z,2025-11-28T11:24:56.367Z
+5,ORD-1764329238262,4,redwan,,449.95,,,2025-11-28T11:27:18.265Z,2025-11-28T11:27:18.265Z

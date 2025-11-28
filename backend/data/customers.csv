@@ -1,0 +1,5 @@
+id,customer_name,phone,email,address,created_at,updated_at
+1,John Doe,555-0101,john.doe@example.com,"123 Main St, New York, NY 10001",2024-01-10T00:00:00.000Z,2024-01-10T00:00:00.000Z
+2,Jane Smith,555-0102,jane.smith@example.com,"456 Oak Ave, Los Angeles, CA 90001",2024-01-11T00:00:00.000Z,2024-01-11T00:00:00.000Z
+3,Bob Johnson,555-0103,bob.johnson@example.com,"789 Pine Rd, Chicago, IL 60601",2024-01-12T00:00:00.000Z,2024-01-12T00:00:00.000Z
+4,redwan,12345678,redwanrifat0505@gmail.com,,2025-11-28T11:24:56.355Z,2025-11-28T11:27:18.259Z

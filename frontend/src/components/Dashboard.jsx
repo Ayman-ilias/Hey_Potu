@@ -55,12 +55,27 @@ function Dashboard() {
             const response = await ordersAPI.getAll();
             const orders = response.data;
 
+            // Check if there are any orders
+            if (!orders || orders.length === 0) {
+                console.log('No orders found for sales trend');
+                setSalesData({ labels: [], data: [], colors: [] });
+                return;
+            }
+
             // Group orders by date and calculate daily sales
             const salesByDate = {};
             const dateObjects = {};
 
             orders.forEach(order => {
-                const dateObj = new Date(order.order_date);
+                // Handle various date formats
+                let dateObj = new Date(order.order_date);
+
+                // Check if date is valid
+                if (isNaN(dateObj.getTime())) {
+                    console.warn('Invalid date for order:', order.order_number, order.order_date);
+                    dateObj = new Date(); // Use current date as fallback
+                }
+
                 const dateKey = dateObj.toISOString().split('T')[0]; // Use ISO date as key for sorting
                 const displayDate = dateObj.toLocaleDateString('en-GB', {
                     day: '2-digit',
@@ -71,7 +86,7 @@ function Dashboard() {
                     salesByDate[dateKey] = 0;
                     dateObjects[dateKey] = displayDate;
                 }
-                salesByDate[dateKey] += parseFloat(order.total_amount);
+                salesByDate[dateKey] += parseFloat(order.total_amount) || 0;
             });
 
             // Sort dates chronologically (oldest to newest - left to right)
@@ -81,6 +96,8 @@ function Dashboard() {
             const last8Days = sortedDateKeys.slice(-8);
             const labels = last8Days.map(key => dateObjects[key]);
             const data = last8Days.map(key => salesByDate[key]);
+
+            console.log('Sales trend data:', { labels, data });
 
             // Calculate colors: teal for increase, red for decrease
             const colors = data.map((value, index) => {
@@ -93,6 +110,7 @@ function Dashboard() {
             setSalesData({ labels, data, colors });
         } catch (error) {
             console.error('Error fetching sales trend:', error);
+            setSalesData({ labels: [], data: [], colors: [] });
         }
     };
 

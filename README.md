@@ -1,205 +1,76 @@
-# HeyPotu - Inventory Management System
+# Hey Potu POS System
 
-Modern inventory management system for HeyPotu with order tracking, customer management, and analytics.
+A modern Point of Sale (POS) system built with React, Node.js, and Docker.
 
-![HeyPotu Logo](./logo.png)
+## Features
 
-## 🚀 Quick Start (VM Deployment)
+- 📦 **Inventory Management** - Track products, stock, and categories
+- 🛒 **Order Management** - Create and manage orders with invoice generation
+- 👥 **Customer Management** - Store customer information and history
+- 📊 **Sales Analytics** - View sales trends and reports
+- 📧 **Email Invoices** - Automatic invoice sending via Gmail
+- 💰 **Multiple Payment Methods** - Cash, Card, Mobile, etc.
+- 🎨 **Professional Invoices** - PDF generation with brand colors
+- 🕒 **GMT+6 Timezone** - Bangladesh time zone support
+- 💾 **Data Persistence** - CSV-based data storage
+
+## Quick Start (Ubuntu VM)
 
 ### Prerequisites
 - Docker
 - Docker Compose
-- Git
 
 ### Installation
 
-1. **Clone the repository:**
-```bash
-git clone https://github.com/Ayman-ilias/Hey_Potu.git
-cd Hey_Potu
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Ayman-ilias/Hey_Potu.git
+   cd Hey_Potu
+   ```
 
-2. **Start the application:**
-```bash
-docker-compose up -d --build
-```
+2. **Start the application**
+   ```bash
+   docker-compose up -d --build
+   ```
 
-3. **Access the application:**
-- Frontend: `http://your-vm-ip:1111`
-- Backend API: `http://your-vm-ip:3000`
+3. **Access the application**
+   - Open browser: `http://localhost:1111`
+   - Or use VM IP: `http://YOUR_VM_IP:1111`
 
-4. **Stop the application:**
-```bash
-docker-compose down
-```
+4. **Default Login**
+   - Username: `admin`
+   - Password: `admin123`
 
-## 📱 Features
+## Configuration
 
-### ✅ Product Management
-- Add, edit, and delete products
-- Track serial numbers and product codes
-- Monitor stock levels (total, sold, remaining)
-- Low stock alerts (≤10 items)
-- Category management
-- Export to PDF/Excel
-
-### ✅ Order Management
-- Create new orders with multiple items
-- Link orders to customers
-- Real-time stock updates
-- Order history tracking
-- Invoice generation
-- Export orders to PDF/Excel
-
-### ✅ Customer Management
-- Customer database with contact information
-- Purchase history tracking
-- Customer analytics
-- Export to PDF/Excel
-
-### ✅ Reports & Analytics
-- **Dashboard** with key metrics:
-  - Total products, orders, customers
-  - Revenue tracking
-  - Low stock alerts
-  - Recent orders overview
-  - Top selling products
-
-- **Inventory Report**:
-  - Complete stock overview
-  - Revenue per product
-  - Export to Excel
-
-- **Sales Report**:
-  - Date range filtering
-  - Total sales and order count
-  - Average order value
-  - Export to Excel
-
-- **Customer Report**:
-  - Customer purchase history
-  - Total spent per customer
-  - Order frequency
-
-## 🎨 Tech Stack
-
-- **Frontend**: React 18 + Vite
-- **Backend**: Node.js + Express
-- **Database**: CSV Files
-- **Deployment**: Docker Compose
-- **Export**: jsPDF, xlsx
-
-## 🎯 Color Scheme
-
-- 🟢 Green: `#7CB342` (hey)
-- 🟠 Orange: `#FF5722` (potu)
-- 🟡 Yellow: `#FFC107` (dash)
-- 🔵 Light Blue: `#4FC3F7` (dot)
-
-## 📂 Project Structure
-
-```
-Hey_Potu/
-├── docker-compose.yml      # Docker orchestration
-├── frontend/
-│   ├── Dockerfile          # Frontend Docker config
-│   ├── nginx.conf          # Nginx configuration
-│   └── src/
-│       ├── components/     # Reusable components
-│       ├── pages/          # Page components (Products, Orders, etc.)
-│       └── utils/          # API client & utilities
-└── backend/
-    ├── Dockerfile          # Backend Docker config
-    ├── server.js           # Express server
-    └── database.js         # SQLite initialization
-```
-
-## 🔧 Configuration
+### Email Setup
+Email credentials are pre-configured:
+- Email: heypotu@gmail.com
+- App Password: xzgd kdap wobs wcwj
 
 ### Ports
-- Frontend: Port 1111 (HTTP)
-- Backend: Port 3000 (API)
+- Frontend: Port 1111
+- Backend API: Port 3000 (internal)
 
-### Database
-- CSV files are automatically created on first run
-- Data stored in `backend/data/` folder as separate CSV files
-  - `products.csv` - Product inventory
-  - `customers.csv` - Customer records
-  - `orders.csv` - Order history
-  - `order_items.csv` - Order line items
-  - `categories.csv` - Product categories
-- Fast, simple, and no compilation required!
-- Can be edited with Excel, LibreOffice, or any text editor
+## Data Persistence
 
-## 🌐 API Endpoints
+All data stored in `backend/data/`:
+- products.csv
+- orders.csv
+- customers.csv
+- categories.csv
 
-### Products
-- `GET /api/products` - Get all products
-- `POST /api/products` - Create product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
+**Backup**: Copy the `backend/data/` folder
 
-### Orders
-- `GET /api/orders` - Get all orders
-- `POST /api/orders` - Create order
-- `GET /api/orders/:id` - Get order details
-
-### Customers
-- `GET /api/customers` - Get all customers
-- `POST /api/customers` - Create customer
-- `GET /api/customers/:id/orders` - Get customer orders
-
-### Reports
-- `GET /api/reports/dashboard` - Dashboard statistics
-- `GET /api/reports/sales` - Sales reports
-- `GET /api/reports/inventory` - Inventory reports
-
-## 🛠️ Development
-
-To run locally without Docker:
+## Docker Commands
 
 ```bash
-# Backend
-cd backend
-npm install
-npm start
-
-# Frontend
-cd frontend
-npm install
-npm run dev
+docker-compose up -d          # Start
+docker-compose up -d --build  # Rebuild and start
+docker-compose logs -f        # View logs
+docker-compose down           # Stop
+docker-compose restart        # Restart
 ```
 
-## 🐛 Troubleshooting
-
-**Containers not starting:**
-```bash
-docker-compose logs
-```
-
-**Port conflicts:**
-- Change ports in `docker-compose.yml` if 80 or 5001 are in use
-
-**Database issues:**
-- Delete `backend/data/` folder and restart containers for fresh database
-- You can also download and edit CSV files directly!
-
-**Frontend not loading:**
-- Clear browser cache
-- Check logs: `docker logs heypotu-frontend`
-
-## 📝 Usage Tips
-
-1. **Products**: Always set initial stock when creating products
-2. **Orders**: Stock automatically decreases when orders are created
-3. **Low Stock**: Products with ≤10 remaining items show warnings
-4. **Reports**: Use date filters in sales reports for specific periods
-5. **Export**: All major tables can be exported to PDF and Excel
-
-## 📄 License
-
-MIT License
-
----
-
-**Built with ❤️ for HeyPotu**
+## License
+MIT

@@ -9,126 +9,254 @@ const createTransporter = () => {
         service: 'gmail',
         auth: {
             user: process.env.EMAIL_USER || 'heypotu@gmail.com',
-            pass: process.env.EMAIL_APP_PASSWORD // This is the App Password from Google
+            pass: process.env.EMAIL_APP_PASSWORD
         }
     });
+};
+
+// Format date to GMT+6 (Bangladesh Time)
+const formatDateGMT6 = (dateString) => {
+    // Create date object - handle various formats
+    let date;
+    if (!dateString || dateString === 'Invalid Date') {
+        date = new Date(); // Use current date if invalid
+    } else {
+        date = new Date(dateString);
+    }
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+        date = new Date(); // Fallback to current date
+    }
+
+    return {
+        full: date.toLocaleDateString('en-US', {
+            timeZone: 'Asia/Dhaka',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }),
+        time: date.toLocaleTimeString('en-US', {
+            timeZone: 'Asia/Dhaka',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        })
+    };
 };
 
 // Generate PDF invoice
 const generateInvoicePDF = (order, paymentMethod = 'CASH') => {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ margin: 50 });
+        const doc = new PDFDocument({
+            margin: 50,
+            size: 'A4'
+        });
         const chunks = [];
 
         doc.on('data', chunk => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        // Dark header background with logo
-        doc.rect(50, 40, 250, 100).fill('#3C3C3C');
+        const logoPath = path.join(__dirname, '../../logo.png');
+        const dateInfo = formatDateGMT6(order.order_date);
 
-        // INVOICE text box (white)
-        doc.rect(350, 40, 200, 100).fillAndStroke('#FFFFFF', '#3C3C3C');
-        doc.fontSize(28).fillColor('#3C3C3C').font('Helvetica-Bold')
-           .text('INVOICE', 350, 75, { width: 200, align: 'center' });
-
-        // Invoice details (left side)
-        doc.fontSize(11).fillColor('#000000').font('Helvetica-Bold');
-        doc.text('INVOICE #', 50, 170);
-        doc.font('Helvetica').text(order.order_number, 130, 170);
-
-        doc.font('Helvetica-Bold').text('ORDER NO', 50, 190);
-        doc.font('Helvetica').text(':', 130, 190);
-
-        doc.font('Helvetica-Bold').text('INVOICE DATE', 50, 210);
-        doc.font('Helvetica').text(': ' + new Date(order.order_date).toLocaleDateString('en-US', {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric'
-        }), 130, 210);
-
-        // Bill To section (right side)
-        doc.font('Helvetica-Bold').text('BILL TO', 350, 170);
-        doc.fontSize(12).text(order.customer_name || 'Walk-in Customer', 350, 190);
-        if (order.customer_phone) {
-            doc.fontSize(10).font('Helvetica').text(order.customer_phone, 350, 210);
+        // ===== HEADER SECTION =====
+        // Company Logo (if exists)
+        if (fs.existsSync(logoPath)) {
+            try {
+                doc.image(logoPath, 50, 40, { width: 80 });
+            } catch (err) {
+                console.log('Logo not loaded, continuing without it');
+            }
         }
 
-        // Items Table
-        const tableTop = 260;
-        const tableHeaders = ['NO', 'DESCRIPTION', 'PRICE', 'QTY', 'TOTAL'];
-        const colWidths = [50, 200, 80, 80, 90];
-        const colX = [50, 100, 300, 380, 460];
+        // Company Name and Details
+        doc.fontSize(24).fillColor('#2C3E50').font('Helvetica-Bold')
+           .text('HEY POTU', 150, 50);
 
-        // Table header with green background
-        doc.rect(50, tableTop, 500, 25).fill('#9AB440');
+        doc.fontSize(10).fillColor('#7F8C8D').font('Helvetica')
+           .text('Point of Sale System', 150, 78)
+           .text('House 26, Road 13, Sector 14, Uttara', 150, 92)
+           .text('Dhaka - 1230, Bangladesh', 150, 106)
+           .text('Email: heypotu@gmail.com', 150, 120);
+
+        // INVOICE Title Box (Right Side)
+        doc.rect(420, 45, 130, 50).fillAndStroke('#3498DB', '#2980B9');
+        doc.fontSize(26).fillColor('#FFFFFF').font('Helvetica-Bold')
+           .text('INVOICE', 420, 60, { width: 130, align: 'center' });
+
+        // Horizontal line separator
+        doc.moveTo(50, 150).lineTo(550, 150).strokeColor('#E0E0E0').lineWidth(1).stroke();
+
+        // ===== INVOICE INFO SECTION =====
+        let yPos = 170;
+
+        // Left Column - Invoice Details
+        doc.fontSize(10).fillColor('#34495E').font('Helvetica-Bold');
+        doc.text('Invoice Number:', 50, yPos);
+        doc.font('Helvetica').fillColor('#2C3E50')
+           .text(order.order_number, 150, yPos);
+
+        yPos += 20;
+        doc.font('Helvetica-Bold').fillColor('#34495E');
+        doc.text('Invoice Date:', 50, yPos);
+        doc.font('Helvetica').fillColor('#2C3E50')
+           .text(dateInfo.full, 150, yPos);
+
+        yPos += 20;
+        doc.font('Helvetica-Bold').fillColor('#34495E');
+        doc.text('Invoice Time:', 50, yPos);
+        doc.font('Helvetica').fillColor('#2C3E50')
+           .text(dateInfo.time + ' (GMT+6)', 150, yPos);
+
+        yPos += 20;
+        doc.font('Helvetica-Bold').fillColor('#34495E');
+        doc.text('Payment Method:', 50, yPos);
+        doc.font('Helvetica').fillColor('#27AE60')
+           .text(paymentMethod, 150, yPos);
+
+        // Right Column - Bill To
+        yPos = 170;
+        doc.fontSize(11).fillColor('#34495E').font('Helvetica-Bold');
+        doc.text('BILL TO:', 350, yPos);
+
+        yPos += 20;
+        doc.fontSize(12).fillColor('#2C3E50').font('Helvetica-Bold');
+        doc.text(order.customer_name || 'Walk-in Customer', 350, yPos);
+
+        if (order.customer_phone) {
+            yPos += 18;
+            doc.fontSize(10).fillColor('#7F8C8D').font('Helvetica');
+            doc.text('Phone: ' + order.customer_phone, 350, yPos);
+        }
+
+        if (order.customer_email) {
+            yPos += 15;
+            doc.fontSize(10).fillColor('#7F8C8D').font('Helvetica');
+            doc.text('Email: ' + order.customer_email, 350, yPos);
+        }
+
+        if (order.customer_address) {
+            yPos += 15;
+            doc.fontSize(9).fillColor('#7F8C8D').font('Helvetica');
+            doc.text('Address: ' + order.customer_address, 350, yPos, { width: 200 });
+        }
+
+        // ===== ITEMS TABLE =====
+        const tableTop = 290;
+
+        // Table Header Background
+        doc.rect(50, tableTop, 500, 30).fill('#34495E');
+
+        // Table Headers
         doc.fontSize(10).fillColor('#FFFFFF').font('Helvetica-Bold');
-        tableHeaders.forEach((header, i) => {
-            doc.text(header, colX[i], tableTop + 8, { width: colWidths[i], align: i === 0 ? 'center' : 'left' });
-        });
+        doc.text('SL', 60, tableTop + 10, { width: 30, align: 'center' });
+        doc.text('DESCRIPTION', 100, tableTop + 10, { width: 200 });
+        doc.text('QTY', 310, tableTop + 10, { width: 50, align: 'center' });
+        doc.text('UNIT PRICE', 370, tableTop + 10, { width: 80, align: 'right' });
+        doc.text('AMOUNT', 460, tableTop + 10, { width: 80, align: 'right' });
 
-        // Table rows
-        let currentY = tableTop + 25;
+        // Table Rows
+        let currentY = tableTop + 30;
+        const rowHeight = 28;
+
         order.items.forEach((item, index) => {
-            const rowBg = index % 2 === 0 ? '#F5F5F5' : '#FFFFFF';
-            doc.rect(50, currentY, 500, 25).fill(rowBg);
+            // Alternating row colors
+            const rowBg = index % 2 === 0 ? '#F8F9FA' : '#FFFFFF';
+            doc.rect(50, currentY, 500, rowHeight).fill(rowBg);
 
-            doc.fontSize(10).fillColor('#3C3C3C').font('Helvetica');
-            doc.text((index + 1).toString(), colX[0], currentY + 8, { width: colWidths[0], align: 'center' });
-            doc.text(item.product_name, colX[1], currentY + 8, { width: colWidths[1] });
-            doc.text(`$${item.unit_price.toFixed(2)}`, colX[2], currentY + 8, { width: colWidths[2], align: 'right' });
-            doc.text(item.quantity.toString(), colX[3], currentY + 8, { width: colWidths[3], align: 'center' });
-            doc.text(`$${item.subtotal.toFixed(2)}`, colX[4], currentY + 8, { width: colWidths[4], align: 'right' });
+            // Row content
+            doc.fontSize(9).fillColor('#2C3E50').font('Helvetica');
 
-            currentY += 25;
+            // Serial Number
+            doc.text((index + 1).toString(), 60, currentY + 9, { width: 30, align: 'center' });
+
+            // Product Name
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.text(item.product_name, 100, currentY + 9, { width: 200 });
+
+            // Quantity
+            doc.font('Helvetica').fontSize(9);
+            doc.text(item.quantity.toString(), 310, currentY + 9, { width: 50, align: 'center' });
+
+            // Unit Price
+            doc.text(item.unit_price.toFixed(2) + ' BDT', 370, currentY + 9, { width: 80, align: 'right' });
+
+            // Subtotal
+            doc.font('Helvetica-Bold');
+            doc.text(item.subtotal.toFixed(2) + ' BDT', 460, currentY + 9, { width: 80, align: 'right' });
+
+            currentY += rowHeight;
         });
 
-        // Summary section
-        const summaryX = 350;
-        const summaryY = currentY + 30;
+        // Table bottom border
+        doc.moveTo(50, currentY).lineTo(550, currentY).strokeColor('#E0E0E0').lineWidth(1).stroke();
+
+        // ===== TOTALS SECTION =====
+        currentY += 20;
+        const summaryX = 340;
+        const labelWidth = 120;
+        const valueWidth = 90;
+
+        // Subtotal
+        doc.fontSize(10).fillColor('#34495E').font('Helvetica');
+        doc.text('Subtotal:', summaryX, currentY, { width: labelWidth, align: 'right' });
+        doc.fillColor('#2C3E50').font('Helvetica-Bold');
+        doc.text(order.total_amount.toFixed(2) + ' BDT', summaryX + labelWidth, currentY, { width: valueWidth, align: 'right' });
+
+        currentY += 20;
+        // VAT
         const taxAmount = order.total_amount * 0.10;
+        doc.fillColor('#34495E').font('Helvetica');
+        doc.text('VAT (10%):', summaryX, currentY, { width: labelWidth, align: 'right' });
+        doc.fillColor('#2C3E50').font('Helvetica-Bold');
+        doc.text(taxAmount.toFixed(2) + ' BDT', summaryX + labelWidth, currentY, { width: valueWidth, align: 'right' });
+
+        currentY += 25;
+        // Total with background
         const totalWithTax = order.total_amount + taxAmount;
+        doc.rect(summaryX - 10, currentY - 5, 220, 35).fillAndStroke('#27AE60', '#229954');
 
-        doc.fontSize(10).font('Helvetica');
-        doc.text('SUB-TOTAL', summaryX, summaryY);
-        doc.text(`$${order.total_amount.toFixed(2)}`, 520, summaryY, { align: 'right' });
+        doc.fontSize(13).fillColor('#FFFFFF').font('Helvetica-Bold');
+        doc.text('TOTAL AMOUNT:', summaryX, currentY + 5, { width: labelWidth, align: 'right' });
+        doc.fontSize(16);
+        doc.text(totalWithTax.toFixed(2) + ' BDT', summaryX + labelWidth, currentY + 5, { width: valueWidth, align: 'right' });
 
-        doc.text('VAT (10%)', summaryX, summaryY + 20);
-        doc.text(`$${taxAmount.toFixed(2)}`, 520, summaryY + 20, { align: 'right' });
+        // ===== TERMS & NOTES SECTION =====
+        currentY += 60;
 
-        // Total Due with green background
-        doc.rect(summaryX, summaryY + 35, 200, 30).fill('#9AB440');
+        // Terms and Conditions Box
+        doc.rect(50, currentY, 240, 80).strokeColor('#E0E0E0').lineWidth(1).stroke();
+        doc.fontSize(11).fillColor('#34495E').font('Helvetica-Bold');
+        doc.text('TERMS & CONDITIONS', 60, currentY + 10);
+
+        doc.fontSize(8).fillColor('#7F8C8D').font('Helvetica');
+        doc.text('• Payment is due upon receipt of invoice', 60, currentY + 28, { width: 220 });
+        doc.text('• Please keep this invoice for warranty claims', 60, currentY + 40, { width: 220 });
+        doc.text('• All sales are final unless otherwise stated', 60, currentY + 52, { width: 220 });
+
+        // Authorized Signature
+        doc.rect(310, currentY, 240, 80).strokeColor('#E0E0E0').lineWidth(1).stroke();
+        doc.fontSize(11).fillColor('#34495E').font('Helvetica-Bold');
+        doc.text('AUTHORIZED SIGNATURE', 320, currentY + 10);
+
+        // Signature line
+        doc.moveTo(330, currentY + 55).lineTo(520, currentY + 55).strokeColor('#7F8C8D').lineWidth(1).stroke();
+        doc.fontSize(9).fillColor('#7F8C8D').font('Helvetica');
+        doc.text('Manager / Authorized Person', 330, currentY + 60, { align: 'center', width: 190 });
+
+        // ===== FOOTER =====
+        const footerY = 730;
+
+        // Footer background
+        doc.rect(50, footerY, 500, 50).fill('#2C3E50');
+
         doc.fontSize(12).fillColor('#FFFFFF').font('Helvetica-Bold');
-        doc.text('Total Due', summaryX + 10, summaryY + 45);
-        doc.text(`$${totalWithTax.toFixed(2)}`, 520, summaryY + 45, { align: 'right' });
+        doc.text('THANK YOU FOR YOUR BUSINESS!', 50, footerY + 12, { width: 500, align: 'center' });
 
-        // Payment Method
-        const paymentY = summaryY + 80;
-        doc.fontSize(11).fillColor('#000000').font('Helvetica-Bold');
-        doc.text('PAYMENT METHOD', 50, paymentY);
-        doc.fontSize(14).text(paymentMethod, 80, paymentY + 20);
-
-        // Terms and Conditions
-        const termsY = paymentY + 50;
-        doc.fontSize(11).font('Helvetica-Bold');
-        doc.text('TERM AND CONDITIONS', 50, termsY);
-        doc.fontSize(8).font('Helvetica').fillColor('#505050');
-        doc.text('Please keep your receipt for any future service, warranty, or', 50, termsY + 15);
-        doc.text('exchange claims.', 50, termsY + 25);
-
-        // Manager signature
-        doc.moveTo(380, termsY + 40).lineTo(520, termsY + 40).stroke();
-        doc.fontSize(10).text('Manager', 450, termsY + 45, { align: 'center' });
-
-        // Footer with dark background
-        const footerY = 680;
-        doc.roundedRect(50, footerY, 500, 80, 5).fill('#3C3C3C');
-        doc.fontSize(11).fillColor('#FFFFFF').font('Helvetica-Bold');
-        doc.text('THANK YOU FOR YOUR BUSINESS', 50, footerY + 15, { width: 500, align: 'center' });
-        doc.fontSize(8).font('Helvetica');
-        doc.text('House 26, Road 13, Sector 14,', 50, footerY + 35, { width: 500, align: 'center' });
-        doc.text('Uttara, Dhaka - 1230, Bangladesh.', 50, footerY + 45, { width: 500, align: 'center' });
-        doc.text('heypotu@gmail.com', 50, footerY + 55, { width: 500, align: 'center' });
+        doc.fontSize(8).fillColor('#ECF0F1').font('Helvetica');
+        doc.text('For any queries, contact us at heypotu@gmail.com or visit our store', 50, footerY + 32, { width: 500, align: 'center' });
 
         doc.end();
     });
@@ -147,63 +275,105 @@ const sendInvoiceEmail = async (order, customerEmail, paymentMethod = 'CASH') =>
         // Create transporter
         const transporter = createTransporter();
 
+        const dateInfo = formatDateGMT6(order.order_date);
+        const totalWithTax = (order.total_amount * 1.1).toFixed(2);
+
         // Email content
         const mailOptions = {
             from: `"Hey Potu POS" <${process.env.EMAIL_USER || 'heypotu@gmail.com'}>`,
             to: customerEmail,
             subject: `Invoice #${order.order_number} - Hey Potu POS`,
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <div style="background: linear-gradient(135deg, #7CB342 0%, #4FC3F7 100%); padding: 20px; text-align: center;">
-                        <h1 style="color: white; margin: 0;">Hey Potu POS</h1>
-                        <p style="color: white; margin: 5px 0;">Thank you for your purchase!</p>
-                    </div>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 
-                    <div style="padding: 30px; background: #f9f9f9;">
-                        <h2 style="color: #333;">Order Confirmation</h2>
-                        <p style="color: #666; line-height: 1.6;">
-                            Dear ${order.customer_name || 'Customer'},
-                        </p>
-                        <p style="color: #666; line-height: 1.6;">
-                            Thank you for your order! Your invoice is attached to this email.
-                        </p>
+                                    <!-- Header -->
+                                    <tr>
+                                        <td style="background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%); padding: 40px 30px; text-align: center;">
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">HEY POTU</h1>
+                                            <p style="color: #ECF0F1; margin: 10px 0 0 0; font-size: 16px;">Invoice Confirmation</p>
+                                        </td>
+                                    </tr>
 
-                        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <td style="padding: 10px; color: #666;"><strong>Invoice Number:</strong></td>
-                                    <td style="padding: 10px; color: #333;">${order.order_number}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; color: #666;"><strong>Order Date:</strong></td>
-                                    <td style="padding: 10px; color: #333;">${new Date(order.order_date).toLocaleDateString()}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; color: #666;"><strong>Total Amount:</strong></td>
-                                    <td style="padding: 10px; color: #7CB342; font-size: 18px; font-weight: bold;">$${(order.total_amount * 1.1).toFixed(2)}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; color: #666;"><strong>Payment Method:</strong></td>
-                                    <td style="padding: 10px; color: #333;">${paymentMethod}</td>
-                                </tr>
-                            </table>
-                        </div>
+                                    <!-- Body -->
+                                    <tr>
+                                        <td style="padding: 40px 30px;">
+                                            <h2 style="color: #2C3E50; margin: 0 0 20px 0; font-size: 24px;">Dear ${order.customer_name || 'Valued Customer'},</h2>
 
-                        <p style="color: #666; line-height: 1.6;">
-                            If you have any questions about your order, please don't hesitate to contact us.
-                        </p>
+                                            <p style="color: #7F8C8D; font-size: 15px; line-height: 1.6; margin: 0 0 25px 0;">
+                                                Thank you for your purchase! Your order has been successfully processed. Please find your invoice attached to this email.
+                                            </p>
 
-                        <p style="color: #666; line-height: 1.6;">
-                            Best regards,<br>
-                            <strong>Hey Potu Team</strong>
-                        </p>
-                    </div>
+                                            <!-- Invoice Details Card -->
+                                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8F9FA; border-radius: 6px; border: 1px solid #E0E0E0; margin-bottom: 25px;">
+                                                <tr>
+                                                    <td style="padding: 25px;">
+                                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                                            <tr>
+                                                                <td style="color: #7F8C8D; font-size: 14px; font-weight: bold; width: 40%;">Invoice Number:</td>
+                                                                <td style="color: #2C3E50; font-size: 14px; font-weight: bold;">${order.order_number}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="color: #7F8C8D; font-size: 14px; padding-top: 8px;">Invoice Date:</td>
+                                                                <td style="color: #2C3E50; font-size: 14px; padding-top: 8px;">${dateInfo.full}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="color: #7F8C8D; font-size: 14px; padding-top: 8px;">Invoice Time:</td>
+                                                                <td style="color: #2C3E50; font-size: 14px; padding-top: 8px;">${dateInfo.time} (GMT+6)</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="color: #7F8C8D; font-size: 14px; padding-top: 8px;">Payment Method:</td>
+                                                                <td style="color: #27AE60; font-size: 14px; font-weight: bold; padding-top: 8px;">${paymentMethod}</td>
+                                                            </tr>
+                                                            <tr style="border-top: 2px solid #E0E0E0;">
+                                                                <td style="color: #7F8C8D; font-size: 16px; font-weight: bold; padding-top: 15px;">Total Amount:</td>
+                                                                <td style="color: #27AE60; font-size: 22px; font-weight: bold; padding-top: 15px;">${totalWithTax} BDT</td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </table>
 
-                    <div style="background: #333; padding: 20px; text-align: center; color: white; font-size: 12px;">
-                        <p style="margin: 5px 0;">House 26, Road 13, Sector 14, Uttara, Dhaka - 1230, Bangladesh</p>
-                        <p style="margin: 5px 0;">Email: heypotu@gmail.com</p>
-                    </div>
-                </div>
+                                            <p style="color: #7F8C8D; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0;">
+                                                If you have any questions regarding this invoice or your order, please don't hesitate to contact us.
+                                            </p>
+
+                                            <p style="color: #2C3E50; font-size: 15px; margin: 25px 0 0 0;">
+                                                Best regards,<br>
+                                                <strong style="color: #3498DB;">Hey Potu Team</strong>
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Footer -->
+                                    <tr>
+                                        <td style="background-color: #2C3E50; padding: 25px 30px; text-align: center;">
+                                            <p style="color: #ECF0F1; font-size: 14px; margin: 0 0 8px 0; font-weight: bold;">Hey Potu POS System</p>
+                                            <p style="color: #95A5A6; font-size: 12px; margin: 0 0 5px 0; line-height: 1.5;">
+                                                House 26, Road 13, Sector 14, Uttara<br>
+                                                Dhaka - 1230, Bangladesh
+                                            </p>
+                                            <p style="margin: 10px 0 0 0;">
+                                                <a href="mailto:heypotu@gmail.com" style="color: #3498DB; text-decoration: none; font-size: 13px;">heypotu@gmail.com</a>
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
             `,
             attachments: [
                 {

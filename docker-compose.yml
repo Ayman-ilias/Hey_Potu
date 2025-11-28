@@ -8,8 +8,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - EMAIL_USER=heypotu@gmail.com
+      - EMAIL_APP_PASSWORD=xzgd kdap wobs wcwj
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend/data:/app/data
     networks:
       - heypotu-network
     restart: unless-stopped
