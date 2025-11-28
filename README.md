@@ -50,7 +50,7 @@ Email credentials are pre-configured:
 
 ### Ports
 - Frontend: Port 1111
-- Backend API: Port 3000 (internal)
+- Backend API: Port 1122
 
 ## Data Persistence
 
