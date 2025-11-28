@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Detect if we're on ngrok (hostname contains ngrok) or remote access
-const isNgrok = window.location.hostname.includes('ngrok') || window.location.hostname.includes('.app');
-const API_URL = isNgrok
-    ? '' // Use relative URL - nginx will proxy to backend
-    : (import.meta.env.VITE_API_URL || 'http://192.168.0.199:5000');
+// Always use relative URL - nginx will proxy to backend
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
     baseURL: `${API_URL}/api`,
