@@ -19,7 +19,7 @@ services:
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=/api
+        - VITE_API_URL=
     image: hey-frontend:latest
     container_name: heypotu-frontend
     ports:
