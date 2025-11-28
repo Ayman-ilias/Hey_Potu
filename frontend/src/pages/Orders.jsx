@@ -131,7 +131,8 @@ function Orders() {
                 customer_email: customerData.email,
                 customer_address: customerData.address,
                 items: cart,
-                notes: ''
+                notes: '',
+                payment_method: paymentMethod
             };
             const response = await ordersAPI.create(orderData);
             alert('Order created successfully!');
@@ -158,94 +159,80 @@ function Orders() {
         doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, 210, 297, 'F');
 
-        // Header border line
-        doc.setDrawColor(79, 70, 229);
-        doc.setLineWidth(0.8);
-        doc.line(20, 55, 190, 55);
+        // Dark header background with logo - matching your template
+        doc.setFillColor(60, 60, 60);
+        doc.roundedRect(20, 15, 80, 40, 3, 3, 'F');
 
-        // Company Logo (top left)
+        // Logo on dark background (top left)
         const logoImg = new Image();
         logoImg.src = '/logo.jpg';
         try {
-            doc.addImage(logoImg, 'JPEG', 20, 15, 30, 30);
+            doc.addImage(logoImg, 'JPEG', 25, 20, 30, 30);
         } catch (e) {
             console.error('Logo loading failed:', e);
         }
 
-        // Company Information (top right)
-        doc.setFontSize(18);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(79, 70, 229);
-        doc.text('HEY POTU', 190, 25, { align: 'right' });
+        // White rounded rectangle for "INVOICE" text (matching template)
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(110, 15, 80, 40, 3, 3, 'F');
 
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80, 80, 80);
-        doc.text('Uttara 14, Dhaka', 190, 33, { align: 'right' });
-        doc.text('Tel: +880-123-456-7890', 190, 38, { align: 'right' });
-        doc.text('Email: info@heypotu.com', 190, 43, { align: 'right' });
-
-        // INVOICE Title (large, bold, left side)
-        doc.setFontSize(40);
+        // INVOICE Title in white box
+        doc.setFontSize(32);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(40, 40, 40);
-        doc.text('INVOICE', 20, 75);
+        doc.setTextColor(60, 60, 60);
+        doc.text('INVOICE', 150, 42, { align: 'center' });
 
         // Invoice Details Box (left side)
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(40, 40, 40);
-        doc.text('Invoice No:', 20, 105);
+        doc.text('INVOICE #', 20, 75);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.text(order.order_number, 55, 105);
+        doc.text(order.order_number, 50, 75);
 
-        // Date (right side, aligned with Invoice No)
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('Date:', 130, 105);
-
+        doc.text('ORDER NO', 20, 82);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.text(new Date(order.order_date).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        }), 145, 105);
+        doc.text(':', 50, 82);
 
-        // Bill To section
+        doc.setFont('helvetica', 'bold');
+        doc.text('INVOICE DATE', 20, 89);
+        doc.setFont('helvetica', 'normal');
+        doc.text(': ' + new Date(order.order_date).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        }), 50, 89);
+
+        // Bill To section (right side)
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(40, 40, 40);
-        doc.text('Bill to:', 20, 120);
+        doc.text('BILL TO', 120, 75);
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.text(order.customer_name || 'Walk-in Customer', 20, 128);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(order.customer_name || 'Walk-in Customer', 120, 82);
 
-        // Only show phone number, no address
         if (order.customer_phone) {
-            doc.setFontSize(9);
-            doc.text(`Tel: ${order.customer_phone}`, 20, 134);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text(order.customer_phone, 120, 89);
         }
 
-        // Horizontal line before table
-        doc.setDrawColor(150, 150, 150);
-        doc.setLineWidth(0.3);
-        doc.line(20, 165, 190, 165);
-
-        // Items Table
-        const tableColumn = ["Item", "Description", "Qty", "Price(BDT)", "Amount(BDT)"];
+        // Items Table with green header (matching your template)
+        const tableColumn = ["NO", "DESCRIPTION", "PRICE", "QTY", "TOTAL"];
         const tableRows = [];
 
         order.items.forEach((item, index) => {
             const itemData = [
-                (index + 1).toString() + '.',
+                (index + 1).toString(),
                 item.product_name,
+                `$${item.unit_price.toFixed(2)}`,
                 item.quantity.toString(),
-                `${item.unit_price.toFixed(0)}`,
-                `${item.subtotal.toFixed(0)}`
+                `$${item.subtotal.toFixed(2)}`
             ];
             tableRows.push(itemData);
         });
@@ -253,124 +240,109 @@ function Orders() {
         doc.autoTable({
             head: [tableColumn],
             body: tableRows,
-            startY: 170,
-            theme: 'plain',
+            startY: 105,
+            theme: 'grid',
             headStyles: {
-                fillColor: [255, 255, 255, 0],
-                textColor: [60, 60, 60],
+                fillColor: [154, 180, 64], // Green color from template
+                textColor: [255, 255, 255],
                 fontStyle: 'bold',
                 fontSize: 10,
-                halign: 'left',
-                cellPadding: { top: 3, bottom: 3, left: 5, right: 5 }
+                halign: 'left'
             },
             bodyStyles: {
                 textColor: [60, 60, 60],
                 fontSize: 10,
-                cellPadding: { top: 4, bottom: 4, left: 5, right: 5 }
+                fillColor: [245, 245, 245]
             },
-            styles: {
-                lineWidth: 0.2,
-                lineColor: [200, 200, 200]
+            alternateRowStyles: {
+                fillColor: [255, 255, 255]
             },
             columnStyles: {
                 0: { cellWidth: 20, halign: 'center' },
-                1: { cellWidth: 65, halign: 'left' },
-                2: { cellWidth: 25, halign: 'center' },
-                3: { cellWidth: 35, halign: 'right' },
+                1: { cellWidth: 70, halign: 'left' },
+                2: { cellWidth: 30, halign: 'right' },
+                3: { cellWidth: 30, halign: 'center' },
                 4: { cellWidth: 35, halign: 'right' }
             }
         });
 
-        // Summary Section (Right-aligned, matching reference)
-        const finalY = doc.lastAutoTable.finalY || 170;
+        // Summary Section (Right-aligned box with green background)
+        const finalY = doc.lastAutoTable.finalY || 130;
 
-        // Horizontal line before summary
-        doc.setDrawColor(150, 150, 150);
-        doc.setLineWidth(0.3);
-        doc.line(20, finalY + 5, 190, finalY + 5);
+        // Summary box background
+        const summaryX = 125;
+        const summaryY = finalY + 10;
 
-        // Summary calculations (right-aligned)
-        const summaryStartX = 120;
-        const summaryLabelX = summaryStartX + 10;
-        const summaryValueX = 185;
+        // SUB-TOTAL
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        doc.text('SUB-TOTAL', summaryX + 5, summaryY);
+        doc.text(`$${order.total_amount.toFixed(2)}`, 185, summaryY, { align: 'right' });
 
+        // VAT (10%)
+        const taxAmount = order.total_amount * 0.10;
+        doc.text('VAT (10%)', summaryX + 5, summaryY + 7);
+        doc.text(`$${taxAmount.toFixed(2)}`, 185, summaryY + 7, { align: 'right' });
+
+        // Total Due with green background
+        doc.setFillColor(154, 180, 64);
+        doc.rect(summaryX, summaryY + 12, 65, 12, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(255, 255, 255);
+        const totalWithTax = order.total_amount + taxAmount;
+        doc.text('Total Due', summaryX + 5, summaryY + 20);
+        doc.text(`$${totalWithTax.toFixed(2)}`, 185, summaryY + 20, { align: 'right' });
+
+        // Payment Method Section (left side box)
+        const paymentY = summaryY + 30;
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(60, 60, 60);
+        doc.setTextColor(40, 40, 40);
+        doc.text('PAYMENT METHOD', 20, paymentY);
 
-        // Subtotal
-        doc.text('Subtotal', summaryLabelX, finalY + 20);
-        doc.text(`${order.total_amount.toFixed(0)}BDT`, summaryValueX, finalY + 20, { align: 'right' });
-
-        // Tax
-        doc.text('Tax', summaryLabelX, finalY + 30);
-        doc.text('10%', summaryValueX, finalY + 30, { align: 'right' });
-
-        // Total (with larger font)
-        doc.setFontSize(12);
-        doc.text('Total', summaryLabelX, finalY + 42);
-        const taxAmount = order.total_amount * 0.10;
-        const totalWithTax = order.total_amount + taxAmount;
-        doc.text(`${totalWithTax.toFixed(0)}BDT`, summaryValueX, finalY + 42, { align: 'right' });
-
-        // Payment Terms Section (left side)
-        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(60, 60, 60);
-        doc.text('Terms & Conditions:', 20, finalY + 20);
+        doc.setFontSize(14);
+        doc.text(paymentMethod.toUpperCase(), 30, paymentY + 10);
+
+        // Terms and Conditions (left side)
+        const termsY = paymentY + 25;
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TERM AND CONDITIONS', 20, termsY);
 
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(80, 80, 80);
-        doc.text('1. Payment is due upon receipt', 20, finalY + 27);
-        doc.text('2. Please make payment within 7 days', 20, finalY + 32);
-        doc.text('3. Thank you for your business!', 20, finalY + 37);
+        doc.text('Please keep your receipt for any future service, warranty, or', 20, termsY + 6);
+        doc.text('exchange claims.', 20, termsY + 10);
 
-        // Payment Method Section - in a box
-        doc.setDrawColor(79, 70, 229);
+        // Manager signature line (right side)
+        doc.setDrawColor(40, 40, 40);
         doc.setLineWidth(0.5);
-        doc.roundedRect(20, finalY + 45, 80, 20, 2, 2, 'S');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
+        doc.line(130, termsY + 15, 190, termsY + 15);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
         doc.setTextColor(60, 60, 60);
-        doc.text('Payment Method:', 25, finalY + 52);
+        doc.text('Manager', 160, termsY + 20, { align: 'center' });
 
+        // Footer with dark background - matching template
+        const footerY = 260;
+        doc.setFillColor(60, 60, 60);
+        doc.roundedRect(20, footerY, 170, 25, 3, 3, 'F');
+
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.setTextColor(79, 70, 229);
-        doc.text(paymentMethod, 25, finalY + 60);
-
-        // Signature section (right side) - in a box
-        doc.setDrawColor(150, 150, 150);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(110, finalY + 45, 80, 20, 2, 2, 'S');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(60, 60, 60);
-        doc.text('Authorized Signature:', 115, finalY + 52);
-
-        // Signature line
-        doc.setDrawColor(100, 100, 100);
-        doc.line(115, finalY + 62, 180, finalY + 62);
-
-        // Footer with border
-        doc.setFillColor(248, 250, 252);
-        doc.rect(0, 272, 210, 25, 'F');
-
-        doc.setDrawColor(220, 220, 220);
-        doc.line(20, 272, 190, 272);
-
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(79, 70, 229);
-        doc.text('Thank you for your business!', 105, 282, { align: 'center' });
+        doc.setTextColor(255, 255, 255);
+        doc.text('THANK YOU FOR YOUR BUSINESS', 105, footerY + 8, { align: 'center' });
 
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('For any questions, contact us: info@heypotu.com | +880-123-456-7890', 105, 288, { align: 'center' });
+        doc.text('House 26, Road 13, Sector 14,', 105, footerY + 14, { align: 'center' });
+        doc.text('Uttara, Dhaka - 1230, Bangladesh.', 105, footerY + 18, { align: 'center' });
+        doc.text('heypotu@gmail.com', 105, footerY + 22, { align: 'center' });
 
         // Open in new tab instead of downloading
         window.open(doc.output('bloburl'), '_blank');

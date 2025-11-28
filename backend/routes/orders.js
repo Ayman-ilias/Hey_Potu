@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { sendInvoiceEmail } = require('../services/emailService');
 
 // Get all orders
 router.get('/', async (req, res) => {
@@ -63,7 +64,7 @@ router.get('/:id', async (req, res) => {
 // Create new order
 router.post('/', async (req, res) => {
   try {
-    const { customer_name, customer_phone, customer_email, customer_address, items, notes } = req.body;
+    const { customer_name, customer_phone, customer_email, customer_address, items, notes, payment_method } = req.body;
 
     if (!customer_phone) {
       throw new Error('Customer phone is required');
@@ -128,10 +129,32 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // 6. Send email if customer email is provided
+    if (customer_email) {
+      try {
+        const order = await db.getById('orders', orderId);
+        const orderItems = await db.query('order_items', oi => oi.order_id === orderId);
+        const orderWithItems = {
+          ...order,
+          customer_name,
+          customer_phone,
+          customer_email,
+          items: orderItems
+        };
+
+        await sendInvoiceEmail(orderWithItems, customer_email, payment_method || 'CASH');
+        console.log(`Invoice email sent to ${customer_email}`);
+      } catch (emailError) {
+        console.error('Error sending invoice email:', emailError);
+        // Don't fail the order if email fails
+      }
+    }
+
     res.status(201).json({
       message: 'Order created successfully',
       orderId: orderId,
-      customerId: customerId
+      customerId: customerId,
+      emailSent: !!customer_email
     });
   } catch (error) {
     console.error('Error creating order:', error);
