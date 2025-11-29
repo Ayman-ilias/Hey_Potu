@@ -15,7 +15,9 @@ const TABLES = {
     customers: path.join(DATA_DIR, 'customers.csv'),
     orders: path.join(DATA_DIR, 'orders.csv'),
     order_items: path.join(DATA_DIR, 'order_items.csv'),
-    categories: path.join(DATA_DIR, 'categories.csv')
+    categories: path.join(DATA_DIR, 'categories.csv'),
+    preorders: path.join(DATA_DIR, 'preorders.csv'),
+    preorder_items: path.join(DATA_DIR, 'preorder_items.csv')
 };
 
 // Initialize CSV files with headers if they don't exist

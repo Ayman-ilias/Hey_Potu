@@ -28,6 +28,10 @@ function Navbar({ onLogout }) {
                         🛒 Orders
                     </NavLink>
 
+                    <NavLink to="/preorders" className={({ isActive }) => isActive ? 'active' : ''}>
+                        📋 Pre-Orders
+                    </NavLink>
+
                     <NavLink to="/customers" className={({ isActive }) => isActive ? 'active' : ''}>
                         👥 Customers
                     </NavLink>

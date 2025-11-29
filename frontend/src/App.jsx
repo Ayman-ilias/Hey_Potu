@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
+import PreOrders from './pages/PreOrders';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/orders" element={<Orders />} />
+                    <Route path="/preorders" element={<PreOrders />} />
                     <Route path="/customers" element={<Customers />} />
                     <Route path="/reports" element={<Reports />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
