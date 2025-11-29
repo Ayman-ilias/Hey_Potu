@@ -1,117 +1,87 @@
-# Hey Potu POS - Ngrok Deployment
+# Hey Potu POS System - Deployment Guide for Ubuntu VM
 
-## 🌐 Public Access URLs
+## Prerequisites
 
-Your Hey Potu POS system has been successfully deployed with ngrok!
+1. **Ubuntu Server** (20.04 LTS or later recommended)
+2. **Docker** and **Docker Compose** installed
+3. **Git** installed
+4. **Port Access**: Ensure ports 1111 (frontend) and 1122 (backend) are accessible
 
-### Frontend (Main Application)
-**Public URL:** https://eosinlike-unsagaciously-ephraim.ngrok-free.dev
+## Quick Start Deployment
 
-Access your POS system from anywhere using this URL.
+### 1. Install Docker and Docker Compose
 
-### Backend API
-The backend API is accessible at: http://localhost:5000 (local network only)
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
 
-For this application, the frontend communicates with the backend through the local network, which works perfectly since they're in the same Docker environment.
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
 
-## 📊 Ngrok Dashboard
+# Add your user to docker group (optional, to run without sudo)
+sudo usermod -aG docker $USER
+newgrp docker
 
-To monitor traffic and requests in real-time:
-- **Web Interface:** http://localhost:4040
+# Install Docker Compose
+sudo apt install docker-compose -y
 
-This dashboard shows:
-- Active tunnels
-- Request/response details
-- Traffic metrics
-- Connection status
+# Verify installation
+docker --version
+docker-compose --version
+```
 
-## ⚙️ How to Use
+### 2. Clone the Repository
 
-1. **Access the Application:**
-   - Open https://eosinlike-unsagaciously-ephraim.ngrok-free.dev in any browser
-   - Works from any device (mobile, tablet, desktop)
-   - No VPN or network configuration needed
+```bash
+# Clone from GitHub
+git clone https://github.com/Ayman-ilias/Hey_Potu.git
+cd Hey_Potu
+```
 
-2. **Share with Others:**
-   - Simply share the public URL with team members or customers
-   - They can access the POS system from anywhere
+### 3. Deploy the Application
 
-## 🔧 Technical Details
+```bash
+# Build and start containers
+docker-compose up -d --build
 
-### Current Setup
-- **Frontend Port:** 1111 (exposed via ngrok)
-- **Backend Port:** 5000 (local only)
-- **Ngrok Region:** India (in)
-- **Ngrok Plan:** Free
-
-### Service Status
-
-Check if services are running:
-```powershell
-# Check Docker containers
+# Check container status
 docker-compose ps
 
-# Check ngrok tunnels
-Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
+# View logs (optional)
+docker-compose logs -f
 ```
 
-## 🛑 Stopping the Deployment
+### 4. Access the Application
 
-To stop ngrok tunnels:
-1. Close the PowerShell windows running ngrok
-2. Or run: `taskkill /F /IM ngrok.exe`
+- **Frontend (POS Interface)**: http://YOUR_VM_IP:1111
+- **Backend API**: http://YOUR_VM_IP:1122
 
-To stop the application:
-```powershell
+## Container Management
+
+```bash
+# Stop all services
 docker-compose down
-```
 
-## 🔄 Redeploying
-
-To redeploy after stopping:
-```powershell
-# Start Docker containers
+# Start services
 docker-compose up -d
 
-# Start ngrok tunnel (frontend)
-ngrok http 1111
+# Restart services
+docker-compose restart
+
+# View logs
+docker-compose logs -f
 ```
 
-## ⚠️ Important Notes
+## Features
 
-1. **Free Tier Limitations:**
-   - URL changes each time ngrok restarts
-   - Session expires after 2 hours of inactivity (may vary)
-   - Limited connections per minute
-
-2. **Security:**
-   - Anyone with the URL can access your POS system
-   - Consider adding authentication for production use
-   - Monitor the ngrok dashboard for unexpected traffic
-
-3. **Performance:**
-   - First request may be slow due to ngrok's interstitial page (free tier)
-   - Subsequent requests are faster
-   - Best for testing and demo purposes
-
-## 📱 Access from Mobile
-
-Simply scan this QR code or open the URL:
-- URL: https://eosinlike-unsagaciously-ephraim.ngrok-free.dev
-
-## 🎯 Next Steps
-
-For production deployment, consider:
-- Upgrading to ngrok paid plan for:
-  - Custom domain
-  - No session limits
-  - No interstitial page
-  - Better performance
-- Or deploying to a cloud platform (AWS, DigitalOcean, Heroku, etc.)
-- Or configuring proper port forwarding on your router
+✅ Product inventory management
+✅ Order processing with invoice generation
+✅ Pre-order system with kick-to-sell
+✅ Customer management
+✅ Email notifications (invoices)
+✅ PDF invoice generation
+✅ Sales reports and analytics
 
 ---
-
-**Deployment Date:** 2025-11-26  
-**Auth Token:** Configured ✓  
-**Status:** Active 🟢
+**Version**: 1.0.0
