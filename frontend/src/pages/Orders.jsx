@@ -146,6 +146,9 @@ function Orders() {
             setCart([]);
             setCustomerData({ name: '', phone: '', email: '', address: '' });
             fetchData(); // refresh stock
+
+            // Switch to history view to show the new order
+            setView('history');
         } catch (error) {
             console.error('Error creating order:', error);
             alert('Error creating order: ' + (error.response?.data?.error || error.message));

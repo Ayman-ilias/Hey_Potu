@@ -1,5 +1,1 @@
-id,preorder_number,customer_id,customer_name,total_amount,status,notes,created_at,updated_at,converted_order_id
-1,PRE-1764398995841,5,ayman,132.97,converted,,2025-11-29T06:49:55.844Z,2025-11-29T06:54:41.893Z,7
-2,PRE-1764399262374,6,Ayman,119.97999999999999,converted,,2025-11-29T06:54:22.378Z,2025-11-29T07:04:39.529Z,8
-3,PRE-1764399831388,7,ayman,12.99,converted,,2025-11-29T07:03:51.396Z,2025-11-29T07:05:20.738Z,9
-4,PRE-1764401005812,9,ayman,5000,converted,,2025-11-29T07:23:25.816Z,2025-11-29T07:23:36.823Z,12
+id,preorder_number,customer_id,customer_name,total_amount,status,notes,converted_order_id,preorder_date,created_at,updated_at
