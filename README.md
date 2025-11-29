@@ -1,76 +1,92 @@
 # Hey Potu POS System
 
-A modern Point of Sale (POS) system built with React, Node.js, and Docker.
+A complete Point of Sale (POS) system built with React and Node.js, featuring inventory management, order processing, pre-orders, and automated email invoicing.
 
 ## Features
 
-- 📦 **Inventory Management** - Track products, stock, and categories
-- 🛒 **Order Management** - Create and manage orders with invoice generation
-- 👥 **Customer Management** - Store customer information and history
-- 📊 **Sales Analytics** - View sales trends and reports
-- 📧 **Email Invoices** - Automatic invoice sending via Gmail
-- 💰 **Multiple Payment Methods** - Cash, Card, Mobile, etc.
-- 🎨 **Professional Invoices** - PDF generation with brand colors
-- 🕒 **GMT+6 Timezone** - Bangladesh time zone support
-- 💾 **Data Persistence** - CSV-based data storage
+- **Product Inventory Management** - Track 29 products with stock levels
+- **Order Processing** - Create orders with automatic invoice generation
+- **Pre-Order System** - Reserve items without inventory deduction, then "Kick to Sell"
+- **Customer Management** - Track customer information and purchase history
+- **Email Notifications** - Automated invoice emails with PDF attachments
+- **Sales Reports** - Dashboard with analytics and trends
+- **Category Management** - Organize products by categories
 
-## Quick Start (Ubuntu VM)
+## Tech Stack
 
-### Prerequisites
-- Docker
-- Docker Compose
+**Frontend:**
+- React + Vite
+- React Router for navigation
+- Axios for API calls
+- Chart.js for data visualization
+- jsPDF for PDF generation
 
-### Installation
+**Backend:**
+- Node.js + Express
+- CSV-based database (no SQL required)
+- Nodemailer for email
+- PDFKit for invoice generation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Ayman-ilias/Hey_Potu.git
-   cd Hey_Potu
-   ```
+**Deployment:**
+- Docker + Docker Compose
+- Nginx reverse proxy
+- Multi-stage builds for optimization
 
-2. **Start the application**
-   ```bash
-   docker-compose up -d --build
-   ```
+## Quick Start
 
-3. **Access the application**
-   - Open browser: `http://localhost:1111`
-   - Or use VM IP: `http://YOUR_VM_IP:1111`
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.
 
-4. **Default Login**
-   - Username: `admin`
-   - Password: `admin123`
+```bash
+# Clone repository
+git clone https://github.com/Ayman-ilias/Hey_Potu.git
+cd Hey_Potu
 
-## Configuration
+# Start with Docker
+docker-compose up -d --build
 
-### Email Setup
-Email credentials are pre-configured:
-- Email: heypotu@gmail.com
-- App Password: xzgd kdap wobs wcwj
+# Access application
+# Frontend: http://localhost:1111
+# Backend: http://localhost:1122
+```
 
-### Ports
-- Frontend: Port 1111
-- Backend API: Port 1122
+## Product Inventory
+
+29 products from DEV110W to DEV150W-1, including:
+- Ladies clothing (denim, tops, dresses)
+- Kids clothing (safari dresses, PJs)
+- Cardigans and pullovers
+- Blankets (small, medium, big)
+- Polos for boys and men
+
+## Ports
+
+- **Frontend**: 1111 (Nginx)
+- **Backend**: 1122 (Node.js)
 
 ## Data Persistence
 
-All data stored in `backend/data/`:
+All data stored in `./backend/data/` as CSV files:
 - products.csv
-- orders.csv
 - customers.csv
-- categories.csv
+- orders.csv
+- order_items.csv
+- preorders.csv
+- preorder_items.csv
 
-**Backup**: Copy the `backend/data/` folder
+## Email Configuration
 
-## Docker Commands
+Configured for Gmail SMTP:
+- Email: heypotu@gmail.com
+- App Password: Already configured in docker-compose.yml
 
-```bash
-docker-compose up -d          # Start
-docker-compose up -d --build  # Rebuild and start
-docker-compose logs -f        # View logs
-docker-compose down           # Stop
-docker-compose restart        # Restart
-```
+## Repository
 
-## License
-MIT
+https://github.com/Ayman-ilias/Hey_Potu
+
+## Version
+
+1.0.0 - Production Ready
+
+---
+
+**Last Updated**: 2025-11-29
