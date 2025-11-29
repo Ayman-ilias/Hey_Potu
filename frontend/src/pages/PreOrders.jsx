@@ -175,41 +175,63 @@ function PreOrders() {
 
     return (
         <div className="orders-page">
-            <div className="orders-header">
-                <h1>Pre-Orders</h1>
-                <div className="view-toggle">
+            <div className="orders-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
+                <h1 style={{ margin: 0, color: '#333' }}>📋 Pre-Orders</h1>
+                <div className="view-toggle" style={{ display: 'flex', gap: '10px', background: '#f5f5f5', padding: '5px', borderRadius: '8px' }}>
                     <button
                         className={view === 'new' ? 'active' : ''}
                         onClick={() => setView('new')}
+                        style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            borderRadius: '6px',
+                            background: view === 'new' ? '#7CB342' : 'transparent',
+                            color: view === 'new' ? 'white' : '#666',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s'
+                        }}
                     >
-                        New Pre-Order
+                        ➕ New Pre-Order
                     </button>
                     <button
                         className={view === 'list' ? 'active' : ''}
                         onClick={() => setView('list')}
+                        style={{
+                            padding: '10px 20px',
+                            border: 'none',
+                            borderRadius: '6px',
+                            background: view === 'list' ? '#4FC3F7' : 'transparent',
+                            color: view === 'list' ? 'white' : '#666',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s'
+                        }}
                     >
-                        Pre-Orders List
+                        📜 Pre-Orders List
                     </button>
                 </div>
             </div>
 
             {view === 'new' ? (
-                <div className="order-creation">
-                    <div className="products-section">
-                        <div className="section-header">
-                            <h2>Products</h2>
-                            <div className="filters">
+                <div className="order-creation" style={{ display: 'flex', gap: '20px', padding: '0 20px' }}>
+                    <div className="products-section" style={{ flex: '2', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                        <div className="section-header" style={{ marginBottom: '20px' }}>
+                            <h2 style={{ color: '#333', marginBottom: '15px' }}>🛍️ Products</h2>
+                            <div className="filters" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                                 <input
                                     type="text"
-                                    placeholder="Search products..."
+                                    placeholder="🔍 Search products..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="search-input"
+                                    style={{ flex: '1', padding: '10px 15px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px' }}
                                 />
                                 <select
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
                                     className="category-filter"
+                                    style={{ padding: '10px 15px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', background: 'white', cursor: 'pointer' }}
                                 >
                                     <option value="All">All Categories</option>
                                     {categories.map(cat => (
@@ -236,35 +258,43 @@ function PreOrders() {
                         </div>
                     </div>
 
-                    <div className="cart-section">
-                        <h2>Pre-Order Cart</h2>
-                        <p className="info-text">Note: Items will NOT be deducted from inventory until you "Kick to Sell"</p>
+                    <div className="cart-section" style={{ flex: '1', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
+                        <h2 style={{ color: '#333', marginBottom: '10px' }}>🛒 Pre-Order Cart</h2>
+                        <div style={{ background: '#fff3cd', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ffc107' }}>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#856404' }}>
+                                ⚠️ <strong>Note:</strong> Items will NOT be deducted from inventory until you "Kick to Sell"
+                            </p>
+                        </div>
 
-                        <div className="customer-form">
-                            <h3>Customer Information</h3>
+                        <div className="customer-form" style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <h3 style={{ color: '#666', fontSize: '16px', marginBottom: '5px' }}>👤 Customer Information</h3>
                             <input
                                 type="text"
                                 placeholder="Customer Name"
                                 value={customerData.name}
                                 onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
+                                style={{ padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px' }}
                             />
                             <input
                                 type="tel"
-                                placeholder="Phone Number *"
+                                placeholder="Phone Number * (Required)"
                                 value={customerData.phone}
                                 onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
                                 required
+                                style={{ padding: '10px', border: '2px solid #7CB342', borderRadius: '8px', fontSize: '14px' }}
                             />
                             <input
                                 type="email"
                                 placeholder="Email"
                                 value={customerData.email}
                                 onChange={(e) => setCustomerData({ ...customerData, email: e.target.value })}
+                                style={{ padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px' }}
                             />
                             <textarea
                                 placeholder="Address"
                                 value={customerData.address}
                                 onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
+                                style={{ padding: '10px', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', minHeight: '60px', resize: 'vertical' }}
                             />
                         </div>
 
@@ -309,28 +339,54 @@ function PreOrders() {
                     </div>
                 </div>
             ) : (
-                <div className="orders-list">
-                    <h2>Pre-Orders List</h2>
-                    <p className="info-text">These orders have NOT been deducted from inventory yet. Click "Kick to Sell" to convert to a confirmed order.</p>
+                <div className="orders-list" style={{ padding: '0 20px' }}>
+                    <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
+                        <h2 style={{ color: '#333', marginBottom: '10px' }}>📜 Pre-Orders List</h2>
+                        <div style={{ background: '#e3f2fd', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #2196f3' }}>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#1565c0' }}>
+                                ℹ️ <strong>Info:</strong> These orders have NOT been deducted from inventory yet. Click "Kick to Sell" to convert to a confirmed order.
+                            </p>
+                        </div>
 
-                    <div className="payment-method-selector" style={{ marginBottom: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px' }}>
-                        <label style={{ marginRight: '10px', fontWeight: 'bold' }}>Payment Method for Conversion:</label>
-                        <select
-                            value={paymentMethod}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-                        >
-                            <option value="Cash">Cash</option>
-                            <option value="Card">Card</option>
-                            <option value="Mobile">Mobile</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                        </select>
+                        <div className="payment-method-selector" style={{ marginBottom: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <label style={{ fontWeight: '600', color: '#666' }}>💳 Payment Method for Conversion:</label>
+                            <select
+                                value={paymentMethod}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                style={{ padding: '10px 15px', borderRadius: '8px', border: '2px solid #e0e0e0', fontSize: '14px', background: 'white', cursor: 'pointer', flex: '0 0 200px' }}
+                            >
+                                <option value="Cash">💵 Cash</option>
+                                <option value="Card">💳 Card</option>
+                                <option value="Mobile">📱 Mobile</option>
+                                <option value="Bank Transfer">🏦 Bank Transfer</option>
+                            </select>
+                        </div>
                     </div>
 
                     {preorders.length === 0 ? (
-                        <p>No pre-orders found.</p>
+                        <div style={{ background: 'white', padding: '60px 20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '60px', marginBottom: '20px' }}>📋</div>
+                            <h3 style={{ color: '#666', marginBottom: '10px' }}>No Pre-Orders Yet</h3>
+                            <p style={{ color: '#999' }}>Create your first pre-order to get started!</p>
+                            <button
+                                onClick={() => setView('new')}
+                                style={{
+                                    marginTop: '20px',
+                                    padding: '12px 24px',
+                                    background: '#7CB342',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                ➕ Create Pre-Order
+                            </button>
+                        </div>
                     ) : (
-                        <div className="orders-table-container">
+                        <div className="orders-table-container" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
                             <table className="orders-table">
                                 <thead>
                                     <tr>
