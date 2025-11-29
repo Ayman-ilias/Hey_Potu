@@ -1,5 +1,5 @@
 services:
-  # Backend API (Node.js + SQLite)
+  # Backend API (Node.js + CSV Storage)
   backend:
     build:
       context: ./backend

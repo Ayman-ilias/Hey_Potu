@@ -28,16 +28,23 @@ app.use('/api/categories', require('./routes/categories'));
 // Health check
 app.get('/health', async (req, res) => {
     try {
-        await pool.query('SELECT 1');
-        res.json({
-            status: 'healthy',
-            database: 'connected',
-            timestamp: new Date().toISOString()
-        });
+        // Simple check to ensure data directory exists
+        const fs = require('fs');
+        const path = require('path');
+        const dataDir = path.resolve(__dirname, './data');
+
+        if (fs.existsSync(dataDir)) {
+            res.json({
+                status: 'healthy',
+                storage: 'csv',
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            throw new Error('Data directory not found');
+        }
     } catch (error) {
         res.status(500).json({
             status: 'unhealthy',
-            database: 'disconnected',
             error: error.message
         });
     }
@@ -86,8 +93,5 @@ app.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
-    pool.end(() => {
-        console.log('Database pool closed');
-        process.exit(0);
-    });
+    process.exit(0);
 });
