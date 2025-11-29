@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 
     const preordersWithDetails = preorders.map(p => {
       const customer = customers.find(c => c.id === p.customer_id);
-      const items = preorderItems.filter(pi => pi.preorder_id === p.id);
+      const items = preorderItems.filter(pi => parseInt(pi.preorder_id) === parseInt(p.id));
 
       return {
         ...p,
@@ -198,9 +198,12 @@ router.post('/:id/kick-to-sell', async (req, res) => {
 
       const product = await db.getById('products', item.product_id);
       if (product) {
+        const currentSold = parseInt(product.sold_items) || 0;
+        const quantitySold = parseInt(item.quantity) || 0;
         await db.update('products', item.product_id, {
-          sold_items: (product.sold_items || 0) + item.quantity
+          sold_items: currentSold + quantitySold
         });
+        console.log(`Updated product ${item.product_name}: sold_items ${currentSold} + ${quantitySold} = ${currentSold + quantitySold}`);
       }
     }
 
@@ -210,10 +213,12 @@ router.post('/:id/kick-to-sell', async (req, res) => {
       converted_order_id: orderId
     });
 
-    // 6. Send email if customer email is provided
+    // 6. Get the created order for response
+    const order = await db.getById('orders', orderId);
+
+    // 7. Send email if customer email is provided
     if (customer && customer.email) {
       try {
-        const order = await db.getById('orders', orderId);
         const orderItems = await db.query('order_items', oi => oi.order_id === orderId);
         const orderWithItems = {
           ...order,
