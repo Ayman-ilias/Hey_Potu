@@ -31,31 +31,21 @@ router.get('/dashboard', async (req, res) => {
         const customer = customers.find(c => c.id === o.customer_id);
         return {
           ...o,
-          customer_name: customer ? customer.customer_name : null
+          customer_name: customer ? customer.customer_name : null,
+          order_date: o.order_date || o.created_at || new Date().toISOString()
         };
       })
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .sort((a, b) => new Date(b.order_date) - new Date(a.order_date))
       .slice(0, 5);
 
-    // Top Selling Products
-    const productSales = {};
-    orderItems.forEach(oi => {
-      if (!productSales[oi.product_id]) {
-        productSales[oi.product_id] = 0;
-      }
-      productSales[oi.product_id] += oi.quantity;
-    });
-
-    const topProducts = Object.entries(productSales)
-      .map(([productId, quantity]) => {
-        const product = products.find(p => p.id === parseInt(productId));
-        return product ? {
-          item_name: product.item_name,
-          item_category: product.item_category,
-          sold_items: quantity
-        } : null;
-      })
-      .filter(p => p !== null)
+    // Top Selling Products - use products.sold_items directly
+    const topProducts = products
+      .filter(p => (p.sold_items || 0) > 0)
+      .map(p => ({
+        item_name: p.item_name,
+        item_category: p.item_category,
+        sold_items: parseInt(p.sold_items) || 0
+      }))
       .sort((a, b) => b.sold_items - a.sold_items)
       .slice(0, 5);
 

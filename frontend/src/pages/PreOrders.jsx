@@ -149,6 +149,11 @@ function PreOrders() {
         try {
             const response = await preordersAPI.kickToSell(preorderId, { payment_method: paymentMethod });
             alert('Pre-order converted to order successfully! Invoice has been sent and items deducted from inventory.');
+
+            // Open invoice PDF in new tab
+            const invoiceUrl = `/api/preorders/${preorderId}/invoice`;
+            window.open(invoiceUrl, '_blank');
+
             fetchPreorders();
         } catch (error) {
             console.error('Error converting pre-order:', error);

@@ -494,5 +494,6 @@ const sendPreorderConfirmationEmail = async (preorder, toEmail) => {
 
 module.exports = {
     sendInvoiceEmail,
-    sendPreorderConfirmationEmail
+    sendPreorderConfirmationEmail,
+    generateInvoicePDF
 };

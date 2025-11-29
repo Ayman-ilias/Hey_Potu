@@ -234,11 +234,50 @@ router.post('/:id/kick-to-sell', async (req, res) => {
     res.status(200).json({
       message: 'Pre-order converted to order successfully',
       orderId: orderId,
+      orderNumber: order.order_number,
       emailSent: !!(customer && customer.email)
     });
   } catch (error) {
     console.error('Error converting pre-order:', error);
     res.status(500).json({ error: error.message || 'Failed to convert pre-order' });
+  }
+});
+
+// Get invoice PDF for a converted pre-order
+router.get('/:id/invoice', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get pre-order to find converted order
+    const preorder = await db.getById('preorders', id);
+    if (!preorder || !preorder.converted_order_id) {
+      return res.status(404).json({ error: 'Order not found for this pre-order' });
+    }
+
+    // Get order details
+    const order = await db.getById('orders', preorder.converted_order_id);
+    const customer = await db.getById('customers', order.customer_id);
+    const orderItems = await db.query('order_items', oi => oi.order_id === preorder.converted_order_id);
+
+    const orderWithItems = {
+      ...order,
+      customer_name: customer ? customer.customer_name : order.customer_name,
+      customer_phone: customer ? customer.phone : null,
+      customer_email: customer ? customer.email : null,
+      customer_address: customer ? customer.address : null,
+      items: orderItems
+    };
+
+    // Generate PDF
+    const { generateInvoicePDF } = require('../services/emailService');
+    const pdfBuffer = await generateInvoicePDF(orderWithItems, 'CASH');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=Invoice_${order.order_number}.pdf`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Error generating invoice PDF:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate invoice' });
   }
 });
 
