@@ -57,6 +57,19 @@ docker-compose logs -f
 - **Frontend (POS Interface)**: http://YOUR_VM_IP:1111
 - **Backend API**: http://YOUR_VM_IP:1122
 
+## Updating the Application
+
+To update the application with the latest changes from GitHub:
+
+```bash
+# 1. Pull latest changes
+git pull origin main
+
+# 2. Rebuild and restart containers
+docker-compose down
+docker-compose up -d --build
+```
+
 ## Container Management
 
 ```bash
