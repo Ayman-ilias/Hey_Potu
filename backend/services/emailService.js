@@ -394,6 +394,105 @@ const sendInvoiceEmail = async (order, customerEmail, paymentMethod = 'CASH') =>
     }
 };
 
+// Send pre-order confirmation email
+const sendPreorderConfirmationEmail = async (preorder, toEmail) => {
+    try {
+        const transporter = createTransporter();
+        const dateInfo = formatDateGMT6(preorder.created_at || new Date());
+
+        const emailBody = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #7CB342 0%, #4FC3F7 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; }
+        .info-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; }
+        .items-table th { background: #7CB342; color: white; padding: 12px; text-align: left; }
+        .items-table td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+        .total { font-size: 20px; font-weight: bold; color: #7CB342; text-align: right; padding: 20px 0; }
+        .footer { background: #333; color: white; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Pre-Order Confirmation</h1>
+            <p style="margin: 0; font-size: 16px;">Thank you for your pre-order!</p>
+        </div>
+        <div class="content">
+            <div class="info-box">
+                <p style="margin: 0;"><strong>⚠️ Important:</strong> This is a pre-order confirmation. Your items are reserved but NOT yet charged or shipped. We'll notify you when your order is ready to be processed.</p>
+            </div>
+
+            <h2>Pre-Order Details</h2>
+            <p><strong>Pre-Order Number:</strong> ${preorder.preorder_number}</p>
+            <p><strong>Date:</strong> ${dateInfo.full} at ${dateInfo.time}</p>
+            <p><strong>Customer Name:</strong> ${preorder.customer_name}</p>
+            <p><strong>Phone:</strong> ${preorder.customer_phone}</p>
+
+            <h3>Pre-Ordered Items:</h3>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${preorder.items.map(item => `
+                        <tr>
+                            <td>${item.product_name}</td>
+                            <td>${item.quantity}</td>
+                            <td>${parseFloat(item.unit_price).toFixed(2)} BDT</td>
+                            <td>${parseFloat(item.subtotal).toFixed(2)} BDT</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            <div class="total">
+                Total Amount: ${parseFloat(preorder.total_amount).toFixed(2)} BDT
+            </div>
+
+            <div class="info-box">
+                <p style="margin: 0;"><strong>Next Steps:</strong></p>
+                <p style="margin: 5px 0 0 0;">• We'll contact you when your pre-order is ready for processing</p>
+                <p style="margin: 5px 0 0 0;">• You'll receive a final invoice once the order is confirmed</p>
+                <p style="margin: 5px 0 0 0;">• Payment will be collected at that time</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p style="margin: 0;">Hey Potu POS System</p>
+            <p style="margin: 5px 0 0 0; font-size: 12px;">📧 ${process.env.EMAIL_USER}</p>
+        </div>
+    </div>
+</body>
+</html>
+        `;
+
+        const mailOptions = {
+            from: `Hey Potu <${process.env.EMAIL_USER}>`,
+            to: toEmail,
+            subject: `Pre-Order Confirmation - ${preorder.preorder_number}`,
+            html: emailBody
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Pre-order confirmation email sent:', info.messageId);
+        return { success: true, messageId: info.messageId };
+    } catch (error) {
+        console.error('Error sending pre-order confirmation email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
-    sendInvoiceEmail
+    sendInvoiceEmail,
+    sendPreorderConfirmationEmail
 };

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { sendInvoiceEmail } = require('../services/emailService');
+const { sendInvoiceEmail, sendPreorderConfirmationEmail } = require('../services/emailService');
 
 // Get all pre-orders
 router.get('/', async (req, res) => {
@@ -123,10 +123,32 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // 6. Send pre-order confirmation email if customer email is provided
+    if (customer_email) {
+      try {
+        const preorder = await db.getById('preorders', preorderId);
+        const preorderItems = await db.query('preorder_items', pi => pi.preorder_id === preorderId);
+        const preorderWithItems = {
+          ...preorder,
+          customer_name,
+          customer_phone,
+          customer_email,
+          items: preorderItems
+        };
+
+        await sendPreorderConfirmationEmail(preorderWithItems, customer_email);
+        console.log(`Pre-order confirmation email sent to ${customer_email}`);
+      } catch (emailError) {
+        console.error('Error sending pre-order confirmation email:', emailError);
+        // Don't fail the pre-order if email fails
+      }
+    }
+
     res.status(201).json({
       message: 'Pre-order created successfully',
       preorderId: preorderId,
-      customerId: customerId
+      customerId: customerId,
+      emailSent: !!customer_email
     });
   } catch (error) {
     console.error('Error creating pre-order:', error);
