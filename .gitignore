@@ -18,5 +18,7 @@ Thumbs.db
 
 # Keep everything else including:
 # - .env files with secrets
-# - data directory
 # - all configuration files
+
+# Ignore data files
+backend/data/*.csv
